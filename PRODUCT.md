@@ -14,7 +14,11 @@ VerbaMind is an offline-first Windows desktop application for psychologists to r
 - **BIRP output format.** AI-generated clinical summaries must produce JSON output conforming to BIRP structure: `Behavior`, `Intervention`, `Response`, `Plan`. No other clinical note formats are supported.
 - **Windows-only.** The application targets the Windows desktop platform exclusively, packaged via Nuitka and Inno Setup.
 - **License-key activation with hardware binding.** The application requires a valid license key verified against Hardware ID before first use. AES key generation and DPAPI binding occurs only after activation succeeds.
-- **MySQL for metadata.** Session metadata, transcripts, SER results, BIRP output, and file locations are stored in a local MySQL database. Audio blobs are never stored in the database — only their encrypted file paths.
+- **SQLite for metadata.** Session metadata, transcripts, SER results, BIRP output, and file locations are stored in a local SQLite database file (`verbamind.db`) via SQLAlchemy with aiosqlite async driver. No external service required — zero-config, embedded, file-based. Audio blobs are never stored in the database — only their encrypted file paths.
+
+- **Models bundled in installer.** Whisper, SER, and Qwen2.5:7B-Instruct models are bundled directly in the installer (~3-8 GB total). No first-run download. Fully offline after install — no internet required at any point.
+
+- **RAG deferred to Phase 6.** Retrieval-Augmented Generation is intentionally skipped for MVP. Qwen2.5:7B-Instruct runs with pure prompt engineering for BIRP generation. RAG knowledge base will be merged from an external repository in a later phase.
 
 ### Security Boundaries
 - Audio files are never stored in plaintext on disk at any point.
@@ -84,7 +88,7 @@ Key transition rules:
 |---|---|---|
 | GUI Framework | **PySide6** | Native Windows look-and-feel, LGPL licensing, QComboBox and QSplitter for dual-channel config and resizable panels, production desktop tooling. |
 | Backend | **FastAPI** (localhost) | Clean REST separation from GUI, async support for AI pipeline orchestration, auto-generated OpenAPI docs for debugging, easy to spawn as a subprocess from the GUI. |
-| Database | **MySQL** | Structured relational data for patients, sessions, transcripts, and BIRP output. Local installation or bundled portable MySQL. |
+| Database | **SQLite (aiosqlite + SQLAlchemy)** | Embedded zero-config file-based DB. No service spawn, no user setup. Battle-tested for single-user desktop apps. Stored as `verbamind.db` alongside the application. |
 | Speech-to-Text | **OpenAI Whisper** | Offline-capable, strong Indonesian language support, word-level timestamps and speaker diarization via post-processing. |
 | Speaker Emotion Recognition | **SER model** (local) | Extracts non-verbal emotional features from voice for enriched verbatim context. |
 | LLM | **Qwen2.5:7B-Instruct** | Runs locally on consumer hardware (7B parameters), instruction-tuned for structured JSON output, strong multilingual (Indonesian) support. |
@@ -123,22 +127,26 @@ Key transition rules:
 
 | # | Question | Impact |
 |---|---|---|
-| 1 | **How are Whisper, SER, and Qwen2.5 models distributed?** Bundled in the installer (large download, fully offline) vs. first-run download with validation. Affects installer size (potentially 3–8 GB) and user onboarding experience. | Packaging strategy |
-| 2 | **MySQL deployment model.** Will MySQL be bundled as a portable instance (e.g., embedded or as a background service spawned by the app) or must the user install MySQL separately? Portable bundling increases installer complexity but simplifies setup for non-technical psychologists. | Deployment, user experience |
-| 3 | **RAG knowledge base content and curation.** What therapeutic frameworks, diagnostic references, and clinical guidelines populate the RAG index? Who maintains and updates this content (built once, periodic updates)? The quality of BIRP output depends directly on this. | AI output quality, compliance |
-| 4 | **Hardware ID verification mechanism.** Which hardware attributes are hashed for license binding (MAC address, CPU serial, motherboard UUID)? What is the tolerance for hardware changes (e.g., replacing a network adapter)? Needs a re-activation or deactivation flow. | Licensing, support burden |
-| 5 | **License key distribution and management.** How are license keys generated, distributed, and validated? Is there a key server, or are keys pre-generated and shipped? What happens if offline validation fails? | Business model, piracy protection |
-| 6 | **Qwen2.5:7B hardware requirements.** Minimum RAM/VRAM for acceptable inference speed? What is the fallback if the user's machine cannot run the model? CPU-only inference via llama.cpp or Ollama vs. GPU-accelerated? | Target hardware, user experience |
-| 7 | **BIRP output editing and finalization.** Can the psychologist edit the AI-generated BIRP before saving/finalizing, or is it purely read-only? If editable, do edits feed back into the RAG system for future sessions? | Workflow design |
-| 8 | **Session retention and storage management.** Are there automatic cleanup policies for old recordings and transcripts? What happens when disk space runs low? | Data lifecycle |
-| 9 | **Dual-channel audio hardware.** What is the minimum supported hardware configuration? Does the app require a specific audio interface, or can it work with any two-microphone setup (e.g., USB + built-in)? | Hardware compatibility, documentation |
+| 1 | **Hardware ID verification mechanism.** Which hardware attributes are hashed for license binding (MAC address, CPU serial, motherboard UUID)? What is the tolerance for hardware changes (e.g., replacing a network adapter)? Needs a re-activation or deactivation flow. | Licensing, support burden |
+| 2 | **License key distribution and management.** How are license keys generated, distributed, and validated? Is there a key server, or are keys pre-generated and shipped? What happens if offline validation fails? | Business model, piracy protection |
+| 3 | **Qwen2.5:7B hardware requirements.** Minimum RAM/VRAM for acceptable inference speed? What is the fallback if the user's machine cannot run the model? CPU-only inference via llama.cpp or Ollama vs. GPU-accelerated? | Target hardware, user experience |
+| 4 | **BIRP output editing and finalization.** Can the psychologist edit the AI-generated BIRP before saving/finalizing, or is it purely read-only? If editable, do edits feed back into future sessions? | Workflow design |
+| 5 | **Session retention and storage management.** Are there automatic cleanup policies for old recordings and transcripts? What happens when disk space runs low? | Data lifecycle |
+| 6 | **Dual-channel audio hardware.** What is the minimum supported hardware configuration? Does the app require a specific audio interface, or can it work with any two-microphone setup (e.g., USB + built-in)? | Hardware compatibility, documentation |
+
+### Resolved Questions
+| Question | Resolution |
+|---|---|
+| Model distribution | **Bundled in installer** — all models (Whisper, SER, Qwen2.5:7B) included in installer at ~3-8 GB. Fully offline after install. |
+| Database deployment | **SQLite embedded** — zero-config, file-based. No service spawn. Replaced MySQL from original architecture (see DECISIONS.md). |
+| RAG knowledge base | **Deferred to Phase 6** — skipped for MVP, will merge from external repository later. Qwen2.5 runs with pure prompt engineering. |
 
 ## HANDOFF
 
 ### Recommended Implementation Phases
 
 ```
-Phase 1  → Database schema (MySQL: patients, sessions, transcripts, BIRP, audit log)
+Phase 1  → Database schema (SQLite: patients, sessions, transcripts, BIRP, audit log)
            + Security module (AES-256 encrypt/decrypt, DPAPI key wrapping)
            + FastAPI skeleton with encryption/decryption + recording endpoints
 
@@ -146,9 +154,8 @@ Phase 2  → Audio acquisition module (dual-channel recording, PyAudio/SoundDevi
            + Whisper integration (STT with verbatim + timestamps)
            + SER integration (non-verbal feature extraction)
 
-Phase 3  → RAG knowledge base (document ingestion, vector indexing, retrieval)
-           + Qwen2.5:7B integration (prompt engineering for BIRP JSON)
-           + Merged verbatim pipeline (STT + SER → enriched transcript → LLM)
+Phase 3  → Merged verbatim pipeline (STT + SER → enriched transcript)
+           + Qwen2.5:7B integration (pure prompt engineering for BIRP JSON, no RAG)
 
 Phase 4  → PySide6 GUI (dashboard, recording session with dual-channel config,
              playback, transcript viewer, BIRP viewer, session management,
@@ -158,14 +165,18 @@ Phase 4  → PySide6 GUI (dashboard, recording session with dual-channel config,
 Phase 5  → Installer packaging (Nuitka compilation, Inno Setup with activation flow)
            + End-to-end testing on clean Windows installs
            + Hardware ID binding + license key flow testing
+
+Phase 6  → RAG integration (merge knowledge base from external repo)
+           + ChromaDB + sentence-transformers + retrieval pipeline
 ```
 
 ### Critical Path Dependencies
 - **Database schema** blocks all downstream persistence work (Phases 1–4).
 - **Security module** (encrypt/decrypt/DPAPI) must be complete before audio recording can go end-to-end (Phase 2+).
-- **Whisper + SER pipeline** must be functional before RAG and LLM can produce meaningful BIRP output (Phase 3 blocks on Phase 2).
+- **Whisper + SER pipeline** must be functional before Qwen2.5 can produce meaningful BIRP output (Phase 3 blocks on Phase 2).
 - **GUI development** can partially parallelize with backend work but full integration tests require the backend to be available.
 - **Packaging** cannot begin until the full application is stable — Nuitka compilation can surface runtime issues not caught in dev.
+- **RAG (Phase 6)** is independent — can be merged anytime without blocking Phase 1–5.
 
 ### First Gate
-Before any implementation begins, resolve Open Questions #1 (model distribution), #2 (MySQL deployment), and #3 (RAG knowledge base) — these decisions fundamentally shape installer size, onboarding complexity, and AI output quality.
+Before any implementation begins, resolve Open Questions #1 (HWID mechanism) and #3 (Qwen2.5 hardware requirements) — HWID mechanism shapes the activation flow, and LLM hardware requirements determine the minimum system spec and GGUF quantization level to bundle.

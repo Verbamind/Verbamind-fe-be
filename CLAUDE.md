@@ -8,7 +8,7 @@
 |---|---|
 | GUI | PySide6 (Windows classic aesthetic, Segoe UI) |
 | Backend | FastAPI (127.0.0.1 only) |
-| DB | MySQL (local) |
+| DB | SQLite (aiosqlite, embedded) |
 | STT | OpenAI Whisper |
 | SER | Speech Emotion Recognition (local model) |
 | LLM | Qwen2.5:7B-Instruct via RAG |

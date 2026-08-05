@@ -26,9 +26,9 @@ Step 5 (Whisper STT)                            │
     ├────── Step 7 (Merged Verbatim) ◄──────────┘
     │           │
     │           ▼
-    │      Step 8 (RAG + Qwen2.5)
-    │
-    ├────── Step 9 (GUI — Dashboard & Recording) ──┐
+     │      Step 8 (Qwen2.5 — no RAG)
+     │
+     ├────── Step 9 (GUI — Dashboard & Recording) ──┐
     │                                               │
     ├────── Step 10 (GUI — Transcript & BIRP) ──────┤
     │                                               │
@@ -54,7 +54,7 @@ Step 14 (Packaging)
 ## Step 1: Project Scaffolding
 
 **Context Brief:**
-VerbaMind is a PySide6 + FastAPI desktop app. This step creates the Python project skeleton with proper package structure, dependency management, and both entry points (GUI + backend). The backend runs as a FastAPI service on 127.0.0.1; the GUI is a PySide6 application that spawns the backend as a subprocess.
+VerbaMind is a PySide6 + FastAPI desktop app with SQLite embedded database. This step creates the Python project skeleton with proper package structure, dependency management, and both entry points (GUI + backend). The backend runs as a FastAPI service on 127.0.0.1; the GUI is a PySide6 application that spawns the backend as a subprocess. ML model directories are created for bundling (Whisper, SER, Qwen2.5:7B GGUF — ~3-8 GB in installer).
 
 **Dependencies:** None
 
@@ -72,6 +72,10 @@ verbamind/
 │       └── router.py        # API router skeleton
 ├── config/
 │   └── config.example.json
+├── models/                  # Bundled ML models (3-8 GB in installer)
+│   ├── whisper/
+│   ├── ser/
+│   └── llm/
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
@@ -106,7 +110,7 @@ python -m verbamind.main          # Window opens (300ms startup max)
 ## Step 2: Database Schema
 
 **Context Brief:**
-VerbaMind stores all metadata in MySQL: patients, psychologists, sessions, transcripts, SER results, BIRP output, and audit logs. Audio files are stored on disk (`.vera` encrypted), with only file paths in the database. This step creates the full schema via SQLAlchemy models and Alembic migrations.
+VerbaMind stores all metadata in SQLite via SQLAlchemy with the aiosqlite async driver: patients, psychologists, sessions, transcripts, SER results, BIRP output, and audit logs. Audio files are stored on disk (`.vera` encrypted), with only file paths in the database. SQLite is zero-config, embedded, file-based — no service to spawn, no user setup. The database file lives at `verbamind.db` alongside the application.
 
 **Dependencies:** Step 1 (project scaffolding)
 
@@ -115,7 +119,7 @@ VerbaMind stores all metadata in MySQL: patients, psychologists, sessions, trans
 verbamind/backend/
 ├── database/
 │   ├── __init__.py
-│   ├── connection.py         # SQLAlchemy engine + session
+│   ├── connection.py         # SQLAlchemy async engine (aiosqlite)
 │   ├── base.py               # Declarative base
 │   └── models/
 │       ├── __init__.py
@@ -133,23 +137,23 @@ verbamind/backend/
 ```
 
 **Task List:**
-1. Create `verbamind/backend/database/connection.py` — SQLAlchemy async engine, session factory
-2. Create `verbamind/backend/database/base.py` — declarative Base
+1. Create `verbamind/backend/database/connection.py` — SQLAlchemy async engine with aiosqlite: `sqlite+aiosqlite:///./verbamind.db`
+2. Create `verbamind/backend/database/base.py` — declarative Base, `init_db()` for first-run table creation
 3. Create model files for: Patient, Psychologist, Session, Transcript, SERResult, BIRPResult, AuditLog
-4. Setup Alembic: `alembic init alembic`, configure env.py for async
+4. Setup Alembic: `alembic init alembic`, configure env.py for async SQLite
 5. Generate initial migration: `alembic revision --autogenerate -m "initial_schema"`
 6. Write tests: model creation, relationship integrity, cascade deletes
-7. Run migration against local MySQL
+7. Run migration against local SQLite database
 
 **Verification:**
 ```bash
-alembic upgrade head                                        # All tables created
+alembic upgrade head                                        # All tables created in verbamind.db
 python -m pytest tests/database/ -v --cov=verbamind.backend.database  # >= 80% coverage
 ```
 
 **Exit Criteria:**
 - All 7 models defined with proper relationships and cascades
-- Alembic migration runs successfully against local MySQL
+- Alembic migration runs successfully against SQLite
 - Tests verify: create patient + session → add transcript → cascade delete session removes transcript
 - Coverage >= 80%
 
@@ -346,10 +350,10 @@ python -m pytest tests/test_merged_verbatim.py -v --cov=verbamind.backend.ai_pip
 
 ---
 
-## Step 8: RAG + Qwen2.5 Integration
+## Step 8: Qwen2.5:7B Integration (Pure Prompt — No RAG)
 
 **Context Brief:**
-The merged verbatim is fed into a RAG pipeline that retrieves relevant therapeutic frameworks and clinical guidelines, then Qwen2.5:7B-Instruct generates a structured BIRP JSON output. The LLM runs locally via llama.cpp or Ollama. The RAG knowledge base contains Indonesian-language therapeutic references.
+The merged verbatim is fed to Qwen2.5:7B-Instruct via llama-cpp-python (GGUF format) to generate structured BIRP JSON output. RAG is deferred to Phase 6 — the LLM runs with pure prompt engineering including BIRP format instructions, therapeutic context guidelines, and example JSON output. The Qwen2.5 GGUF model is bundled in `models/llm/` (~4-5 GB Q4_K_M quantization).
 
 **Dependencies:** Step 7 (Merged Verbatim)
 
@@ -357,24 +361,20 @@ The merged verbatim is fed into a RAG pipeline that retrieves relevant therapeut
 ```
 verbamind/backend/
 ├── ai_pipeline/
-│   ├── rag/
-│   │   ├── __init__.py
-│   │   ├── retriever.py    # Vector search over knowledge base
-│   │   ├── indexer.py      # Embed + index new documents
-│   │   └── knowledge_base/ # Therapeutic reference documents
-│   ├── llm.py              # Qwen2.5 wrapper (llama.cpp / Ollama)
-│   ├── birp_generator.py   # RAG + LLM → BIRP JSON pipeline
+│   ├── llm.py              # Qwen2.5 wrapper (llama-cpp-python)
+│   ├── birp_generator.py   # Prompt + LLM → BIRP JSON pipeline
+│   └── prompts/
+│       └── birp_prompt.py  # BIRP prompt template (zero-shot + few-shot)
 ├── tests/
 │   └── test_birp.py
 ```
 
 **Task List:**
-1. Create `rag/indexer.py` — embed documents, build vector index (FAISS or ChromaDB)
-2. Create `rag/retriever.py` — `retrieve(query, top_k=5)` → relevant context chunks
-3. Create `llm.py` — `load_model()`, `generate(prompt, system_prompt)`, `generate_json(prompt, system_prompt, schema)`
-4. Create `birp_generator.py` — `generate_birp(merged_verbatim, session_context)` → BIRP JSON
-5. Design BIRP prompt template with RAG context injection
-6. Write tests: mock LLM output, verify JSON schema compliance, verify RAG retrieval relevance
+1. Create `prompts/birp_prompt.py` — BIRP JSON prompt template with format instructions, Indonesian therapeutic context, and few-shot examples
+2. Create `llm.py` — `load_model(model_path)`, `generate(prompt, system_prompt)`, `generate_json(prompt, system_prompt, schema)`
+3. Create `birp_generator.py` — `generate_birp(merged_verbatim, session_context)` → BIRP JSON (pure prompt, no retrieval)
+4. Write tests: mock LLM output, verify JSON schema compliance, verify prompt structure
+5. Optional placeholder: `rag/` directory with commented skeleton for Phase 6 merge
 
 **Verification:**
 ```bash
@@ -383,9 +383,12 @@ python -m pytest tests/test_birp.py -v --cov=verbamind.backend.ai_pipeline
 
 **Exit Criteria:**
 - `generate_birp()` returns valid JSON with Behavior, Intervention, Response, Plan keys
-- RAG retrieval returns relevant context for sample verbatim inputs
-- LLM fallback: if model unavailable, returns clear error (no silent failure)
+- BIRP prompt template includes: BIRP field definitions, Indonesian language instructions, JSON output schema
+- LLM fallback: if model file not found in `models/llm/`, returns clear error (no silent failure)
 - BIRP output validates against expected JSON schema
+- `rag/` directory exists with `__init__.py` and placeholder comments for Phase 6 merge
+
+**Note:** RAG will be merged from external repository in Phase 6. The `rag/` directory is a prepared slot — no implementation yet.
 
 ---
 
@@ -619,7 +622,7 @@ python -m pytest tests/e2e/ -v
 ## Step 14: Packaging
 
 **Context Brief:**
-Compile VerbaMind into a professional Windows installer. Nuitka compiles Python to native code (folder mode, not single-file). Inno Setup creates the installer with license key entry, HWID verification, and first-run activation flow. Models are either bundled or downloaded on first run.
+Compile VerbaMind into a professional Windows installer. Nuitka compiles Python to native code (folder mode, not single-file). Inno Setup creates the installer with license key entry, HWID verification, and first-run activation flow. All ML models (Whisper, SER, Qwen2.5:7B GGUF — ~3-8 GB) are bundled in the installer with disk spanning for large files.
 
 **Dependencies:** Step 13 (Testing & Polish)
 
@@ -672,7 +675,7 @@ installer/
 ├─────────────────────────────────────────────────────────────┤
 │ WAVE 3 (serial, blocks on Wave 2)                           │
 │  Step 7 → Step 8                                            │
-│  (Merged Verbatim → RAG + Qwen2.5)                          │
+│  (Merged Verbatim → Qwen2.5 BIRP — no RAG)                  │
 ├─────────────────────────────────────────────────────────────┤
 │ WAVE 4 (blocks on all above)                                │
 │  Step 12 (Integration)                                      │
