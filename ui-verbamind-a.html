@@ -1,0 +1,1708 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>VerbatimAI — Aplikasi Pencatatan Sesi Konseling</title>
+    <style>
+      /* ============================================================
+     TOKEN WARNA & GAYA — meniru Windows classic (Control Panel /
+     Device Manager / Settings klasik). Setiap komentar menandai
+     padanan widget PySide6 agar mudah diterjemahkan.
+     ============================================================ */
+      :root {
+        --win-bg: #f0f0f0; /* QMainWindow background */
+        --panel-bg: #ffffff; /* QWidget / content panel */
+        --border-dark: #8f8f8f;
+        --border-light: #ffffff;
+        --border-mid: #b1b1b1;
+        --accent: #0a5fc4; /* selection / primary accent */
+        --accent-soft: #cfe4fb;
+        --text: #1a1a1a;
+        --text-dim: #5a5a5a;
+        --sidebar-bg: #e7e7e7;
+        --statusbar-bg: #e2e2e2;
+        --groupbox-bg: #f4f4f4;
+        --led-on: #2ecc57;
+        --led-off: #c9c9c9;
+        --warn-bg: #fff4ce;
+        --warn-border: #d8a400;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #5b6b78; /* desktop wallpaper belakang jendela, hanya utk demo */
+        font-family: "Segoe UI", "Tahoma", sans-serif;
+        font-size: 13px;
+        color: var(--text);
+      }
+      /* ============ JENDELA UTAMA (QMainWindow) ============ */
+      .app-window {
+        width: 1180px;
+        max-width: 96vw;
+        margin: 16px auto;
+        background: var(--win-bg);
+        border: 1px solid #3a3a3a;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        display: flex;
+        flex-direction: column;
+        height: 760px;
+      }
+      /* ---- Title bar (dekorasi jendela, non-fungsional di demo) ---- */
+      .title-bar {
+        height: 32px;
+        flex: 0 0 32px;
+        background: linear-gradient(180deg, #2b3d52, #1c2b3c);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        font-size: 12px;
+        letter-spacing: 0.2px;
+      }
+      .title-bar .app-icon {
+        width: 16px;
+        height: 16px;
+        background: #4fa3ff;
+        border-radius: 2px;
+        margin-right: 8px;
+      }
+      .title-bar .win-btns {
+        margin-left: auto;
+        display: flex;
+      }
+      .title-bar .win-btns span {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        cursor: default;
+      }
+      .title-bar .win-btns span:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .title-bar .win-btns span.close:hover {
+        background: #c0392b;
+      }
+
+      /* ---- Menu bar (QMenuBar) ---- */
+      .menu-bar {
+        flex: 0 0 26px;
+        background: var(--win-bg);
+        border-bottom: 1px solid var(--border-mid);
+        display: flex;
+        align-items: center;
+        padding: 0 6px;
+        font-size: 12px;
+        color: var(--text);
+      }
+      .menu-bar span {
+        padding: 4px 10px;
+        cursor: default;
+      }
+      .menu-bar span:hover {
+        background: var(--accent-soft);
+      }
+
+      /* ---- Toolbar (QToolBar) ---- */
+      .toolbar {
+        flex: 0 0 40px;
+        background: var(--win-bg);
+        border-bottom: 1px solid var(--border-mid);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 8px;
+      }
+      .tb-btn {
+        /* QToolButton */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 32px;
+        border: 1px solid transparent;
+        background: transparent;
+        font-size: 10px;
+        color: var(--text);
+        cursor: default;
+      }
+      .tb-btn .ico {
+        width: 16px;
+        height: 16px;
+        background: #7d8b9a;
+        border-radius: 2px;
+        margin-bottom: 2px;
+      }
+      .tb-btn:hover {
+        border-color: var(--border-mid);
+        background: #e5f0fb;
+      }
+      .tb-sep {
+        width: 1px;
+        height: 24px;
+        background: var(--border-mid);
+        margin: 0 4px;
+      }
+
+      /* ============ BODY: sidebar + content (QSplitter) ============ */
+      .body-split {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+      }
+
+      /* ---- Sidebar navigasi (QListWidget / QTreeWidget) ---- */
+      .sidebar {
+        width: 190px;
+        flex: 0 0 190px;
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--border-mid);
+        padding: 8px 0;
+        overflow-y: auto;
+      }
+      .sidebar .nav-item {
+        /* QListWidgetItem */
+        padding: 8px 14px;
+        font-size: 12.5px;
+        color: var(--text);
+        cursor: default;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-left: 3px solid transparent;
+      }
+      .sidebar .nav-item .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #8fa6bd;
+        flex: 0 0 8px;
+      }
+      .sidebar .nav-item:hover {
+        background: #dcecfb;
+      }
+      .sidebar .nav-item.active {
+        background: var(--accent-soft);
+        border-left: 3px solid var(--accent);
+        font-weight: 600;
+      }
+
+      /* ---- Content area (QStackedWidget) ---- */
+      .content {
+        flex: 1;
+        min-width: 0;
+        background: var(--panel-bg);
+        padding: 16px;
+        overflow-y: auto;
+      }
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
+      .page h2 {
+        margin: 0 0 12px 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        border-bottom: 1px solid var(--border-mid);
+        padding-bottom: 8px;
+      }
+
+      /* ---- GroupBox (QGroupBox) ---- */
+      .group-box {
+        border: 1px solid var(--border-mid);
+        background: var(--groupbox-bg);
+        border-radius: 2px;
+        margin-top: 14px;
+        padding: 16px 14px 14px 14px;
+        position: relative;
+      }
+      .group-box > .gb-title {
+        position: absolute;
+        top: -9px;
+        left: 10px;
+        background: var(--panel-bg);
+        padding: 0 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-dim);
+      }
+      .gb-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex: 1;
+        min-width: 160px;
+      }
+      .field label {
+        font-size: 11.5px;
+        color: var(--text-dim);
+      }
+      .field input[type="text"],
+      .field input[type="date"],
+      .field select,
+      .field textarea {
+        border: 1px solid var(--border-mid);
+        background: #fff;
+        padding: 5px 6px;
+        font-family: inherit;
+        font-size: 12.5px;
+        border-radius: 2px;
+      }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        outline: 1px solid var(--accent);
+      }
+
+      /* ---- Button (QPushButton) ---- */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        font-size: 12.5px;
+        background: linear-gradient(180deg, #ffffff, #e6e6e6);
+        border: 1px solid var(--border-mid);
+        border-radius: 2px;
+        color: var(--text);
+        cursor: default;
+      }
+      .btn:hover {
+        background: linear-gradient(180deg, #f2f8ff, #dcebfb);
+        border-color: var(--accent);
+      }
+      .btn:active {
+        background: #dcebfb;
+      }
+      .btn.primary {
+        background: linear-gradient(180deg, #1a78d6, #0a5fc4);
+        color: #fff;
+        border-color: #08519f;
+      }
+      .btn.primary:hover {
+        background: linear-gradient(180deg, #2286e6, #0f6ad3);
+      }
+      .btn.danger {
+        background: linear-gradient(180deg, #fff, #fbeaea);
+        border-color: #c0392b;
+        color: #a02a1f;
+      }
+      .btn.danger:hover {
+        background: #f9d6d2;
+      }
+      .btn.small {
+        padding: 3px 10px;
+        font-size: 11.5px;
+      }
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      /* ---- Table (QTableWidget) ---- */
+      table.qtable {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border: 1px solid var(--border-mid);
+        font-size: 12px;
+      }
+      table.qtable th {
+        background: #e9e9e9;
+        border: 1px solid var(--border-mid);
+        padding: 6px 8px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-dim);
+      }
+      table.qtable td {
+        border: 1px solid #ddd;
+        padding: 6px 8px;
+      }
+      table.qtable tr:nth-child(even) td {
+        background: #f7f9fb;
+      }
+      table.qtable tr:hover td {
+        background: var(--accent-soft);
+      }
+      table.qtable td.editable {
+        cursor: text;
+      }
+      table.qtable td.editable:hover {
+        outline: 1px dashed var(--accent);
+        outline-offset: -2px;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 9px;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .badge.sedih {
+        background: #3b6fb5;
+      }
+      .badge.marah {
+        background: #c0392b;
+      }
+      .badge.netral {
+        background: #8a8a8a;
+      }
+      .badge.senang {
+        background: #2e9e5b;
+      }
+      .badge.cemas {
+        background: #c8790b;
+      }
+
+      /* ---- Fisiologis Suara di tabel transkrip ---- */
+      .fisio {
+        font-size: 10.5px;
+        line-height: 1.5;
+        color: var(--text);
+      }
+
+      /* ---- Status LED indikator mic ---- */
+      .led-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .led {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--led-off);
+        border: 1px solid #999;
+      }
+      .led.on {
+        background: var(--led-on);
+        box-shadow: 0 0 4px var(--led-on);
+      }
+
+      /* ---- Progress bar (QProgressBar) ---- */
+      .qprogress {
+        height: 16px;
+        border: 1px solid var(--border-mid);
+        background: #fff;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .qprogress .fill {
+        height: 100%;
+        background: repeating-linear-gradient(
+          45deg,
+          #1a78d6,
+          #1a78d6 8px,
+          #2286e6 8px,
+          #2286e6 16px
+        );
+        width: 38%;
+      }
+
+      /* ---- Audio Settings (mic selection / test / volume) ---- */
+      .audio-grid {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .audio-grid .col {
+        flex: 1;
+        min-width: 260px;
+      }
+      .audio-grid .col + .col {
+        border-left: 1px dashed var(--border-mid);
+        padding-left: 18px;
+      }
+      .audio-field {
+        margin-bottom: 12px;
+      }
+      .audio-field label {
+        display: block;
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .audio-field select,
+      .audio-field input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--border-mid);
+        background: #fff;
+        padding: 5px 6px;
+        font-family: inherit;
+        font-size: 12.5px;
+        border-radius: 2px;
+      }
+      /* volume slider track */
+      .vol-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .vol-row input[type="range"] {
+        flex: 1;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: linear-gradient(
+          90deg,
+          var(--accent) 0%,
+          var(--accent) 75%,
+          #cfcfcf 75%,
+          #cfcfcf 100%
+        );
+        border-radius: 3px;
+        outline: none;
+      }
+      .vol-row input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+        border: 1px solid var(--accent);
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+      .vol-pct {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        min-width: 34px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* live level meter */
+      .level-meter {
+        display: flex;
+        gap: 2px;
+        height: 18px;
+        align-items: flex-end;
+        background: #fff;
+        border: 1px solid var(--border-mid);
+        padding: 3px 4px;
+        border-radius: 2px;
+        margin-top: 6px;
+      }
+      .level-meter .seg {
+        flex: 1;
+        height: 100%;
+        background: #e2e2e2;
+        border-radius: 1px;
+        transition: background 0.08s linear;
+      }
+      .level-meter .seg.low {
+        background: #2ecc57;
+      }
+      .level-meter .seg.mid {
+        background: #c8790b;
+      }
+      .level-meter .seg.high {
+        background: #c0392b;
+      }
+
+      /* audio player bar (play / delete) */
+      .audio-player {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff;
+        border: 1px solid var(--border-mid);
+        padding: 8px 10px;
+        border-radius: 2px;
+        margin-top: 10px;
+      }
+      .audio-player .play-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #1a78d6, #0a5fc4);
+        color: #fff;
+        border: 1px solid #08519f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+        font-size: 13px;
+        flex: 0 0 32px;
+      }
+      .audio-player .play-btn:hover {
+        background: linear-gradient(180deg, #2286e6, #0f6ad3);
+      }
+      .audio-player .track {
+        flex: 1;
+        height: 8px;
+        background: #e2e2e2;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+      .audio-player .track .played {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 33%;
+        background: var(--accent);
+      }
+      .audio-player .time {
+        font-size: 11px;
+        color: var(--text-dim);
+        font-variant-numeric: tabular-nums;
+        min-width: 78px;
+        text-align: right;
+      }
+      .audio-player .wave {
+        flex: 1;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        gap: 1px;
+      }
+      .audio-player .wave span {
+        flex: 1;
+        background: var(--accent);
+        opacity: 0.65;
+        border-radius: 1px;
+      }
+
+      /* ---- Alert / banner (QFrame dgn style khusus) ---- */
+      .alert-box {
+        border: 1px solid var(--warn-border);
+        background: var(--warn-bg);
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 14px;
+        border-radius: 2px;
+      }
+      .alert-box .msg {
+        font-size: 12.5px;
+      }
+      .alert-box .msg b {
+        display: block;
+        font-size: 12.5px;
+        margin-bottom: 2px;
+      }
+
+      /* ---- Split kolom transkrip + BIRP ---- */
+      .verbatim-split {
+        display: flex;
+        gap: 14px;
+        margin-top: 14px;
+        align-items: flex-start;
+      }
+      .verbatim-split .col-left {
+        flex: 1.4;
+        min-width: 0;
+      }
+      .verbatim-split .col-right {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* ---- BIRP grid (label fixed, konten editable) ---- */
+      .birp-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .birp-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .birp-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--accent);
+        padding: 2px 0;
+      }
+      .birp-input {
+        width: 100%;
+        border: 1px solid var(--border-mid);
+        background: #fff;
+        padding: 6px 8px;
+        font-family: "Consolas", "Segoe UI", monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        border-radius: 2px;
+        resize: vertical;
+      }
+      .birp-input:focus {
+        outline: 1px solid var(--accent);
+      }
+
+       /* ---- Speed box toolbar mini (QComboBox) ---- */
+      .combo{
+          padding:6px 10px;
+          min-width:130px;
+          border:1px solid #bdbdbd;
+          background:#ffffff;
+          font-size:14px;
+          border-radius:2px;
+      }
+
+      .combo:focus{
+          outline:none;
+          border-color:#0078d7;
+      }
+
+      /* ---- Search box toolbar mini (QLineEdit) ---- */
+      .search-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+        align-items: center;
+      }
+      .search-row input {
+        border: 1px solid var(--border-mid);
+        padding: 5px 8px;
+        font-size: 12.5px;
+        flex: 0 0 260px;
+      }
+
+      /* ---- Status bar (QStatusBar) ---- */
+      .status-bar {
+        flex: 0 0 24px;
+        background: var(--statusbar-bg);
+        border-top: 1px solid var(--border-mid);
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        gap: 16px;
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+      .status-bar .sep {
+        width: 1px;
+        height: 14px;
+        background: var(--border-mid);
+      }
+      .status-bar .lock {
+        color: #2e7d32;
+        font-weight: 600;
+      }
+
+      /* stat cards dashboard */
+      .stat-cards {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 6px;
+      }
+      .stat-card {
+        flex: 1;
+        border: 1px solid var(--border-mid);
+        background: #fff;
+        padding: 10px 12px;
+        border-radius: 2px;
+      }
+      .stat-card .num {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .stat-card .lbl {
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+
+      /* ---- Modal (popup Hasil Verbatim + BIRP) ---- */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal-box {
+        background: var(--win-bg);
+        border: 1px solid #3a3a3a;
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
+        width: 92%;
+        max-width: 1080px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-header {
+        flex: 0 0 auto;
+        background: linear-gradient(180deg, #2b3d52, #1c2b3c);
+        color: #fff;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal-header h3 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .modal-close {
+        background: transparent;
+        border: 0;
+        color: #fff;
+        font-size: 14px;
+        cursor: default;
+        width: 28px;
+        height: 28px;
+      }
+      .modal-close:hover {
+        background: #c0392b;
+      }
+      .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+      .modal-footer {
+        flex: 0 0 auto;
+        border-top: 1px solid var(--border-mid);
+        padding: 10px 12px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: var(--statusbar-bg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-window">
+      <!-- ============ TITLE BAR ============ -->
+      <div class="title-bar">
+        <div class="app-icon"></div>
+        Verbamind AI
+        <div class="win-btns">
+          <span>—</span><span>▢</span><span class="close">✕</span>
+        </div>
+      </div>
+
+      <!-- ============ MENU BAR (QMenuBar) ============ -->
+      <div class="menu-bar">
+        <span>File</span><span>Edit</span><span>Tampilan</span><span>Sesi</span
+        ><span>Bantuan</span>
+      </div>
+
+      <!-- ============ TOOLBAR (QToolBar) ============ -->
+      <div class="toolbar">
+        <div class="tb-btn">
+          <div class="ico"></div>
+          Sesi Baru
+        </div>
+        <div class="tb-btn">
+          <div class="ico"></div>
+          Pasien Baru
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn">
+          <div class="ico"></div>
+          Segarkan
+        </div>
+        <div class="tb-btn">
+          <div class="ico"></div>
+          Ekspor PDF
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn">
+          <div class="ico"></div>
+          Pengaturan
+        </div>
+      </div>
+
+      <div class="body-split">
+        <!-- ============ SIDEBAR (QListWidget) ============ -->
+        <div class="sidebar" id="sidebar">
+          <div class="nav-item active" data-page="dashboard">
+            <span class="dot"></span>Dashboard
+          </div>
+          <div class="nav-item" data-page="pasien">
+            <span class="dot"></span>Data Pasien
+          </div>
+          <div class="nav-item" data-page="rekam">
+            <span class="dot"></span>Sesi Baru
+          </div>
+          <div class="nav-item" data-page="audit">
+            <span class="dot"></span>Audit Log
+          </div>
+        </div>
+
+        <!-- ============ CONTENT (QStackedWidget) ============ -->
+        <div class="content">
+          <!-- ---------- PAGE: DASHBOARD ---------- -->
+          <div class="page active" id="page-dashboard">
+            <h2>Dashboard</h2>
+            <div class="stat-cards">
+              <div class="stat-card">
+                <div class="num">42</div>
+                <div class="lbl">Total Pasien</div>
+              </div>
+              <div class="stat-card">
+                <div class="num">7</div>
+                <div class="lbl">Sesi Bulan Ini</div>
+              </div>
+              <div class="stat-card">
+                <div class="num">3</div>
+                <div class="lbl">BIRP Belum Direview</div>
+              </div>
+              <div class="stat-card">
+                <div class="num">2</div>
+                <div class="lbl">Audio Menunggu Keputusan Hapus</div>
+              </div>
+            </div>
+
+            <div class="group-box">
+              <div class="gb-title">Sesi Terbaru</div>
+              <table class="qtable">
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Pasien</th>
+                  <th>Durasi</th>
+                  <th>Status BIRP</th>
+                  <th>Status Audio</th>
+                </tr>
+                <tr>
+                  <td>21 Jul 2026</td>
+                  <td>R. Santoso</td>
+                  <td>48 menit</td>
+                  <td>Selesai</td>
+                  <td>Tersimpan</td>
+                </tr>
+                <tr>
+                  <td>19 Jul 2026</td>
+                  <td>D. Ayu</td>
+                  <td>52 menit</td>
+                  <td>Draft</td>
+                  <td>Menunggu keputusan</td>
+                </tr>
+                <tr>
+                  <td>15 Jul 2026</td>
+                  <td>F. Hakim</td>
+                  <td>40 menit</td>
+                  <td>Selesai</td>
+                  <td>Dihapus otomatis</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- ---------- PAGE: DATA PASIEN ---------- -->
+          <div class="page" id="page-pasien">
+            <h2>Data Pasien</h2>
+            <div class="search-row">
+              <input type="text" placeholder="Cari nama pasien..." />
+              <button class="btn small">Cari</button>
+              <button class="btn small primary" style="margin-left: auto">
+                + Tambah Pasien
+              </button>
+            </div>
+            <table class="qtable">
+              <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Tgl Lahir</th>
+                <th>No. Rekam Medis</th>
+                <th>Jumlah Sesi</th>
+                <th>Aksi</th>
+              </tr>
+              <tr>
+                <td>P-001</td>
+                <td>R. Santoso</td>
+                <td>12/03/1994</td>
+                <td>RM-2201</td>
+                <td>5</td>
+                <td>
+                  <button class="btn small js-open-pasien" data-pasien-id="P-001" data-pasien-nama="R. Santoso" data-pasien-rm="RM-2201">Buka</button>
+                  <button class="btn small danger">Hapus</button>
+                </td>
+              </tr>
+              <tr>
+                <td>P-002</td>
+                <td>D. Ayu</td>
+                <td>05/11/1998</td>
+                <td>RM-2242</td>
+                <td>3</td>
+                <td>
+                  <button class="btn small js-open-pasien" data-pasien-id="P-002" data-pasien-nama="D. Ayu" data-pasien-rm="RM-2242">Buka</button>
+                  <button class="btn small danger">Hapus</button>
+                </td>
+              </tr>
+              <tr>
+                <td>P-003</td>
+                <td>F. Hakim</td>
+                <td>27/07/1990</td>
+                <td>RM-2290</td>
+                <td>8</td>
+                <td>
+                  <button class="btn small js-open-pasien" data-pasien-id="P-003" data-pasien-nama="F. Hakim" data-pasien-rm="RM-2290">Buka</button>
+                  <button class="btn small danger">Hapus</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- ---------- PAGE: SESI BARU / REKAM ---------- -->
+          <div class="page" id="page-rekam">
+            <h2>Sesi Baru / Perekaman</h2>
+
+            <div class="group-box">
+              <div class="gb-title">Detail Sesi</div>
+              <div class="gb-row">
+                <div class="field">
+                  <label>Pasien</label>
+                  <select>
+                    <option>R. Santoso — RM-2201</option>
+                    <option>D. Ayu — RM-2242</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Tanggal Sesi</label
+                  ><input type="date" value="2026-07-23" />
+                </div>
+              </div>
+              <div class="gb-row">
+                <div class="field">
+                  <label>Surat Konsen (Persetujuan Rekam Suara)</label>
+                  <input
+                    type="text"
+                    value="konsen_R.Santoso_23072026.pdf"
+                    readonly
+                  />
+                </div>
+                <div
+                  class="field"
+                  style="flex: 0 0 140px; justify-content: flex-end"
+                >
+                  <button class="btn small">Upload Berkas...</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== AUDIO SETTINGS (mirip Zoom) ===== -->
+            <div class="group-box">
+              <div class="gb-title">Pengaturan Audio</div>
+              <div class="audio-grid">
+                <!-- Kiri: Mikrofon 1 -->
+                <div class="col">
+                  <div class="audio-field">
+                    <label>🎤 Mikrofon 1</label>
+                    <select>
+                      <option>Headset USB — Jabra Evolve2 (Default)</option>
+                      <option>Mikrofon Bawaan Laptop — Realtek Audio</option>
+                      <option>External Mic — Shure MV7</option>
+                    </select>
+                  </div>
+                  <div class="audio-field">
+                    <label>Level Volume Input</label>
+                    <div class="vol-row">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="75"
+                        id="volInput1"
+                      />
+                      <span class="vol-pct" id="volInputVal1">75%</span>
+                    </div>
+                    <div class="level-meter" id="levelInput1">
+                      <div class="seg low"></div>
+                      <div class="seg low"></div>
+                      <div class="seg low"></div>
+                      <div class="seg low"></div>
+                      <div class="seg mid"></div>
+                      <div class="seg mid"></div>
+                      <div class="seg mid"></div>
+                      <div class="seg high"></div>
+                      <div class="seg"></div>
+                      <div class="seg"></div>
+                      <div class="seg"></div>
+                      <div class="seg"></div>
+                    </div>
+                  </div>
+                  <div class="btn-row">
+                    <button class="btn small">🎙️ Tes Mikrofon</button>
+                  </div>
+                </div>
+
+                <!-- Tengah: Mikrofon 2 -->
+                <div class="col">
+                  <div class="audio-field">
+                    <label>🎤 Mikrofon 2</label>
+                    <select>
+                      <option>Headset USB — Jabra Evolve2 (Default)</option>
+                      <option>Mikrofon Bawaan Laptop — Realtek Audio</option>
+                      <option>External Mic — Shure MV7</option>
+                    </select>
+                  </div>
+                  <div class="audio-field">
+                    <label>Level Volume Input</label>
+                    <div class="vol-row">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="75"
+                        id="volInput2"
+                      />
+                      <span class="vol-pct" id="volInputVal2">75%</span>
+                    </div>
+                    <div class="level-meter" id="levelInput2">
+                      <div class="seg low"></div>
+                      <div class="seg low"></div>
+                      <div class="seg low"></div>
+                      <div class="seg low"></div>
+                      <div class="seg mid"></div>
+                      <div class="seg mid"></div>
+                      <div class="seg mid"></div>
+                      <div class="seg high"></div>
+                      <div class="seg"></div>
+                      <div class="seg"></div>
+                      <div class="seg"></div>
+                      <div class="seg"></div>
+                    </div>
+                  </div>
+                  <div class="btn-row">
+                    <button class="btn small">🎙️ Tes Mikrofon</button>
+                  </div>
+                </div>
+
+                <!-- Kanan: Kualitas / Profil -->
+                <div class="col">
+                  <div class="audio-field">
+                    <label>⚙️ Profil Perekaman</label>
+                    <select>
+                      <option>
+                        Konseling Standar (44.1 kHz / 16-bit / Stereo)
+                      </option>
+                      <option>High Quality (48 kHz / 24-bit / Stereo)</option>
+                      <option>
+                        Transkripsi Optimal (16 kHz / Mono — disarankan AI)
+                      </option>
+                    </select>
+                  </div>
+                  <div class="audio-field">
+                    <label>🎧 Atur Perangkat</label>
+                    <div class="group">
+                      <div class="group-title"></div>
+
+                      <div class="group-body">
+                        <div class="row">
+                          <label>Mic 1</label>
+
+                          <select id="mic1Role" onchange="updateRole()">
+                            <option value="patient">Pasien</option>
+                            <option value="psychologist">Psikolog</option>
+                          </select>
+                        </div>
+
+                        <div class="row">
+                          <label>Mic 2</label>
+
+                          <input
+                            type="text"
+                            id="mic2Role"
+                            value="Psikolog"
+                            readonly
+                            style="
+                              flex: 1;
+                              padding: 7px;
+                              background: #efefef;
+                              border: 1px solid #c0c0c0;
+                            "
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <script>
+                      function updateRole() {
+                        const mic1 = document.getElementById("mic1Role").value;
+                        const mic2 = document.getElementById("mic2Role");
+
+                        if (mic1 === "patient") {
+                          mic2.value = "Psikolog";
+                        } else {
+                          mic2.value = "Pasien";
+                        }
+                      }
+                    </script>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== STATUS PEREKAMAN (STOP dipisah) ===== -->
+            <div class="group-box">
+              <div class="gb-title">Status Perekaman</div>
+              <div class="led-row">
+                <div
+                  class="led on"
+                  style="background: #c0392b; box-shadow: 0 0 6px #c0392b"
+                ></div>
+              </div>
+              <div class="gb-row" style="align-items: center; margin-top: 8px">
+                <div
+                  style="
+                    font-size: 28px;
+                    font-weight: 700;
+                    font-variant-numeric: tabular-nums;
+                    color: var(--text);
+                  "
+                >
+                  00:24:17
+                </div>
+                <div style="margin-left: auto" class="btn-row">
+                  <button class="btn small">⏸ Jeda</button>
+                  <button class="btn danger">■ Stop Perekaman</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== AUDIO PLAYER (Play / Delete) ===== -->
+            <div class="group-box">
+              <div class="gb-title">Audio Preview</div>
+              <div
+                style="
+                  color: var(--text-dim);
+                  font-size: 11.5px;
+                  margin-bottom: 4px;
+                "
+              >
+                File: <b>session_R.Santoso_23072026.wav</b> · Durasi: 24:17 ·
+                Ukuran: 38.2 MB · 44.1 kHz Stereo
+              </div>
+              <div class="audio-player">
+                <div class="play-btn">▶</div>
+                <div class="wave">
+                  <span style="height: 30%"></span
+                  ><span style="height: 55%"></span
+                  ><span style="height: 40%"></span>
+                  <span style="height: 70%"></span
+                  ><span style="height: 85%"></span
+                  ><span style="height: 60%"></span>
+                  <span style="height: 45%"></span
+                  ><span style="height: 75%"></span
+                  ><span style="height: 50%"></span>
+                  <span style="height: 65%"></span
+                  ><span style="height: 40%"></span
+                  ><span style="height: 30%"></span>
+                  <span style="height: 55%"></span
+                  ><span style="height: 80%"></span
+                  ><span style="height: 45%"></span>
+                  <span style="height: 35%"></span
+                  ><span style="height: 60%"></span
+                  ><span style="height: 70%"></span>
+                  <span style="height: 50%"></span
+                  ><span style="height: 40%"></span
+                  ><span style="height: 65%"></span>
+                  <span style="height: 55%"></span
+                  ><span style="height: 75%"></span
+                  ><span style="height: 45%"></span>
+                  <span style="height: 35%"></span
+                  ><span style="height: 60%"></span
+                  ><span style="height: 50%"></span>
+                  <span style="height: 40%"></span>
+                </div>
+                <span class="time">08:02 / 24:17</span>
+              </div>
+              <div class="btn-row">
+                <button class="btn small">⏯ Putar / Jeda</button>
+                <label for="playbackSpeed" style="margin-right:8px;">Playback Speed</label>
+                <select id="playbackSpeed" class="combo">
+                    <option value="1.0">1.0×</option>
+                    <option value="1.25">1.25×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="2.0">2.0×</option>
+                </select>
+                <button class="btn small danger" style="margin-left: auto">
+                  🗑 Hapus Audio
+                </button>
+              </div>
+            </div>
+
+            <!-- ===== PROGRES PEMROSESAN (terpisah) ===== -->
+            <div class="group-box">
+              <div class="gb-title">Progres Pemrosesan AI</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  margin-bottom: 6px;
+                "
+              >
+                <div style="font-size: 11.5px; color: var(--text)">
+                  Transkripsi ucapan &amp; analisis emosi...
+                </div>
+                <span class="badge cemas" style="margin-left: auto"
+                  >Sedang Diproses</span
+                >
+              </div>
+              <div class="qprogress">
+                <div class="fill" style="width: 38%"></div>
+              </div>
+              <div
+                class="gb-row"
+                style="margin-top: 8px; color: var(--text-dim); font-size: 11px"
+              >
+                <div>Transkripsi: <b style="color: var(--accent)">38%</b></div>
+              </div>
+              <div class="btn-row">
+                <button class="btn small">⏸ Jeda Pemrosesan</button>
+                <button class="btn small">⟳ Ulang Proses</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---------- PAGE: DETAIL PASIEN (ROOM) ---------- -->
+          <div class="page" id="page-pasien-room">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+              <button class="btn small js-back-to-pasien">← Kembali</button>
+              <h2 style="margin:0;border:0;padding:0;" id="room-title">Detail Pasien</h2>
+            </div>
+
+            <!-- Info header pasien -->
+            <div class="group-box">
+              <div class="gb-title">Informasi Pasien</div>
+              <div class="gb-row">
+                <div class="field">
+                  <label>ID Pasien</label>
+                  <input type="text" id="room-pasien-id" value="—" readonly />
+                </div>
+                <div class="field">
+                  <label>Nama</label>
+                  <input type="text" id="room-pasien-nama" value="—" readonly />
+                </div>
+                <div class="field">
+                  <label>No. Rekam Medis</label>
+                  <input type="text" id="room-pasien-rm" value="—" readonly />
+                </div>
+                <div class="field">
+                  <label>Total Sesi</label>
+                  <input type="text" id="room-pasien-total" value="—" readonly />
+                </div>
+              </div>
+            </div>
+
+            <!-- Daftar sesi verbatim pasien -->
+            <div class="group-box">
+              <div class="gb-title">Riwayat Sesi Verbatim</div>
+              <div class="search-row">
+                <input type="text" placeholder="Cari sesi berdasarkan tanggal..." />
+                <button class="btn small">Cari</button>
+                <button class="btn small primary" style="margin-left:auto;">+ Sesi Baru untuk Pasien Ini</button>
+              </div>
+              <table class="qtable">
+                <tr>
+                  <th>ID Sesi</th>
+                  <th>Tanggal</th>
+                  <th>Durasi</th>
+                  <th>Status BIRP</th>
+                  <th>Status Audio</th>
+                  <th>Aksi</th>
+                </tr>
+                <tr>
+                  <td>S-1042</td>
+                  <td>21 Jul 2026</td>
+                  <td>48 menit</td>
+                  <td>Selesai</td>
+                  <td>Tersimpan</td>
+                  <td>
+                    <button class="btn small primary js-lihat-verbatim"
+                      data-sesi-id="S-1042"
+                      data-sesi-tanggal="21 Jul 2026"
+                      data-sesi-pasien="R. Santoso">Lihat</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>S-1038</td>
+                  <td>14 Jul 2026</td>
+                  <td>52 menit</td>
+                  <td>Selesai</td>
+                  <td>Dihapus otomatis</td>
+                  <td>
+                    <button class="btn small primary js-lihat-verbatim"
+                      data-sesi-id="S-1038"
+                      data-sesi-tanggal="14 Jul 2026"
+                      data-sesi-pasien="R. Santoso">Lihat</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>S-1031</td>
+                  <td>07 Jul 2026</td>
+                  <td>40 menit</td>
+                  <td>Selesai</td>
+                  <td>Dihapus otomatis</td>
+                  <td>
+                    <button class="btn small primary js-lihat-verbatim"
+                      data-sesi-id="S-1031"
+                      data-sesi-tanggal="07 Jul 2026"
+                      data-sesi-pasien="R. Santoso">Lihat</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>S-1024</td>
+                  <td>30 Jun 2026</td>
+                  <td>45 menit</td>
+                  <td>Draft</td>
+                  <td>Menunggu keputusan</td>
+                  <td>
+                    <button class="btn small primary js-lihat-verbatim"
+                      data-sesi-id="S-1024"
+                      data-sesi-tanggal="30 Jun 2026"
+                      data-sesi-pasien="R. Santoso">Lihat</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- ============ MODAL: HASIL VERBATIM + BIRP ============ -->
+          <div class="modal-overlay" id="modal-verbatim">
+            <div class="modal-box">
+              <div class="modal-header">
+                <h3 id="modal-title">Hasil Verbatim</h3>
+                <button class="modal-close js-close-modal">✕</button>
+              </div>
+              <div class="modal-body">
+                <div class="alert-box" style="margin-top:0;">
+                  <div class="msg">
+                    <b>⚠ Konfirmasi Penyimpanan Audio</b>
+                    Apakah verbatim / ringkasan BIRP sesi ini akan diedit lagi? Jika
+                    tidak, file audio akan dihapus otomatis.
+                  </div>
+                  <div class="btn-row">
+                    <button class="btn small primary">Ya, akan edit — simpan audio</button>
+                    <button class="btn small danger">Tidak — hapus audio sekarang</button>
+                  </div>
+                </div>
+
+                <div class="verbatim-split">
+                  <div class="col-left">
+                    <div class="group-box" style="margin-top:0;">
+                      <div class="gb-title">Transkrip (klik sel untuk edit)</div>
+                      <table class="qtable">
+                        <tr>
+                          <th>Waktu</th>
+                          <th>Pembicara</th>
+                          <th>Ucapan</th>
+                           <th>Fisiologis Suara</th>
+                        </tr>
+                        <tr>
+                          <td>00:00:12</td>
+                          <td>Psikolog</td>
+                          <td class="editable">Bagaimana perasaan Anda minggu ini?</td>
+                          <td>—</td>
+                        </tr>
+                        <tr>
+                          <td>00:00:19</td>
+                          <td>Pasien</td>
+                          <td class="editable">Cukup berat, saya sering merasa cemas di malam hari.</td>
+                          <td><div class="fisio">Vol: tinggi · Pitch: naik · Tempo: menurun<br>Jeda: 1,2 dtk</div></td>
+                        </tr>
+                        <tr>
+                          <td>00:00:41</td>
+                          <td>Pasien</td>
+                          <td class="editable">Tapi hari Minggu kemarin saya sempat merasa lega.</td>
+                          <td><div class="fisio">Vol: normal · Pitch: turun · Tempo: stabil<br>Jeda: 0,8 dtk</div></td>
+                        </tr>
+                        <tr>
+                          <td>00:00:55</td>
+                          <td>Psikolog</td>
+                          <td class="editable">Apa yang membuat Anda merasa lega saat itu?</td>
+                          <td>—</td>
+                        </tr>
+                        <tr>
+                          <td>00:01:03</td>
+                          <td>Pasien</td>
+                          <td class="editable">Saya bertemu teman lama, jadi agak terhibur.</td>
+                          <td><div class="fisio">Vol: rendah · Pitch: naik · Tempo: meningkat<br>Jeda: 0,4 dtk</div></td>
+                        </tr>
+                      </table>
+                      <div class="btn-row" style="margin-top:10px;">
+                        <button class="btn small">Ekspor PDF Transkrip</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-right">
+                    <div class="group-box" style="margin-top:0;">
+                      <div class="gb-title">Ringkasan BIRP — isian dari AI, edit konten sesuai kebutuhan</div>
+                      <div class="birp-grid">
+                        <div class="birp-item">
+                          <div class="birp-label">B (Behavior):</div>
+                          <textarea class="birp-input" rows="2">Pasien tampak tenang namun sesekali menunjukkan tanda kecemasan saat membahas malam hari.</textarea>
+                        </div>
+                        <div class="birp-item">
+                          <div class="birp-label">I (Intervention):</div>
+                          <textarea class="birp-input" rows="2">Psikolog menggunakan teknik eksplorasi perasaan dan validasi emosi.</textarea>
+                        </div>
+                        <div class="birp-item">
+                          <div class="birp-label">R (Response):</div>
+                          <textarea class="birp-input" rows="2">Pasien merespons positif, menunjukkan keterbukaan saat membahas momen lega di akhir pekan.</textarea>
+                        </div>
+                        <div class="birp-item">
+                          <div class="birp-label">P (Plan):</div>
+                          <textarea class="birp-input" rows="2">Lanjutkan eksplorasi pemicu kecemasan malam hari pada sesi berikutnya.</textarea>
+                        </div>
+                      </div>
+                      <div class="btn-row">
+                        <button class="btn small primary">Simpan Perubahan</button>
+                        <button class="btn small">Ekspor PDF BIRP</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn small js-close-modal">Tutup</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---------- PAGE: AUDIT LOG ---------- -->
+          <div class="page" id="page-audit">
+            <h2>Audit Log</h2>
+            <div class="search-row">
+              <select>
+                <option>Semua Aksi</option>
+                <option>Login</option>
+                <option>Buat Sesi</option>
+                <option>Edit</option>
+                <option>Delete</option>
+                <option>Logout</option>
+              </select>
+              <input type="date" value="2026-07-01" />
+              <span>s/d</span>
+              <input type="date" value="2026-07-23" />
+              <button class="btn small">Filter</button>
+            </div>
+            <table class="qtable">
+              <tr>
+                <th>Timestamp</th>
+                <th>Aksi</th>
+                <th>Detail</th>
+                <th>ID Sesi / Pasien</th>
+              </tr>
+              <tr>
+                <td>2026-07-23 09:02:11</td>
+                <td>Login</td>
+                <td>Login berhasil</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>2026-07-23 09:05:44</td>
+                <td>Buat Sesi</td>
+                <td>Sesi verbatim baru dibuat</td>
+                <td>S-1042 / P-001</td>
+              </tr>
+              <tr>
+                <td>2026-07-21 14:20:03</td>
+                <td>Edit</td>
+                <td>Ringkasan BIRP diedit</td>
+                <td>S-1038 / P-001</td>
+              </tr>
+              <tr>
+                <td>2026-07-19 11:10:57</td>
+                <td>Delete</td>
+                <td>Audio sesi dihapus otomatis</td>
+                <td>S-1031 / P-003</td>
+              </tr>
+              <tr>
+                <td>2026-07-19 10:40:02</td>
+                <td>Logout</td>
+                <td>Logout</td>
+                <td>—</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ STATUS BAR (QStatusBar) ============ -->
+      <div class="status-bar">
+        <span class="lock">🔒 Data tersimpan</span>
+        <div class="sep"></div>
+        <span>Pengguna: dr. Psikolog</span>
+        <div class="sep"></div>
+        <span>Model aktif: Qwen2.5</span>
+        <div class="sep"></div>
+        <span style="margin-left: auto">v0.1.0</span>
+      </div>
+    </div>
+
+    <script>
+      // ===== Helper: ganti page aktif (tanpa paksa nav sidebar) =====
+      function showPage(pageId) {
+        document.querySelectorAll(".page").forEach(function (p) {
+          p.classList.remove("active");
+        });
+        var el = document.getElementById(pageId);
+        if (el) el.classList.add("active");
+      }
+      function setActiveNav(dataPage) {
+        document.querySelectorAll(".nav-item").forEach(function (i) {
+          i.classList.toggle("active", i.dataset.page === dataPage);
+        });
+      }
+
+      // Navigasi sidebar -> QStackedWidget.setCurrentIndex()
+      document.querySelectorAll(".nav-item").forEach(function (item) {
+        item.addEventListener("click", function () {
+          setActiveNav(item.dataset.page);
+          showPage("page-" + item.dataset.page);
+        });
+      });
+
+      // ===== Tombol "Buka" di Data Pasien -> masuk ke room Detail Pasien =====
+      document.querySelectorAll(".js-open-pasien").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.dataset.pasienId;
+          var nama = btn.dataset.pasienNama;
+          var rm = btn.dataset.pasienRm;
+          // Cari jumlah sesi dari baris tabel induk
+          var row = btn.closest("tr");
+          var cells = row ? row.querySelectorAll("td") : [];
+          var totalSesi = cells.length >= 5 ? cells[4].textContent.trim() : "—";
+
+          document.getElementById("room-pasien-id").value = id;
+          document.getElementById("room-pasien-nama").value = nama;
+          document.getElementById("room-pasien-rm").value = rm;
+          document.getElementById("room-pasien-total").value = totalSesi;
+          document.getElementById("room-title").textContent =
+            "Detail Pasien — " + nama + " (" + id + ")";
+
+          // Room tidak punya nav-item sendiri; biarkan nav pasien tetap aktif
+          setActiveNav("pasien");
+          showPage("page-pasien-room");
+        });
+      });
+
+      // Tombol "← Kembali" dari room ke list pasien
+      var backBtn = document.querySelector(".js-back-to-pasien");
+      if (backBtn) {
+        backBtn.addEventListener("click", function () {
+          setActiveNav("pasien");
+          showPage("page-pasien");
+        });
+      }
+
+      // ===== Modal Hasil Verbatim + BIRP =====
+      var modal = document.getElementById("modal-verbatim");
+      var modalTitle = document.getElementById("modal-title");
+
+      function openModal(sesiId, sesiTanggal, sesiPasien) {
+        if (modalTitle) {
+          modalTitle.textContent =
+            "Hasil Verbatim — " + sesiPasien + ", " + sesiTanggal + " (" + sesiId + ")";
+        }
+        modal.classList.add("open");
+      }
+      function closeModal() {
+        modal.classList.remove("open");
+      }
+
+      document.querySelectorAll(".js-lihat-verbatim").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          openModal(
+            btn.dataset.sesiId,
+            btn.dataset.sesiTanggal,
+            btn.dataset.sesiPasien
+          );
+        });
+      });
+      document.querySelectorAll(".js-close-modal").forEach(function (btn) {
+        btn.addEventListener("click", closeModal);
+      });
+      // Tutup modal saat klik area overlay (di luar modal-box)
+      if (modal) {
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeModal();
+        });
+      }
+      // Tutup modal dengan tombol Esc
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
+      });
+
+      // ===== Audio Settings: update label persen slider volume =====
+      function bindVolume(rangeId, labelId, gradientAccent) {
+        var r = document.getElementById(rangeId);
+        var l = document.getElementById(labelId);
+        if (!r || !l) return;
+        function upd() {
+          l.textContent = r.value + "%";
+          r.style.background =
+            "linear-gradient(90deg," +
+            gradientAccent +
+            " 0%," +
+            gradientAccent +
+            " " +
+            r.value +
+            "%,#cfcfcf " +
+            r.value +
+            "%,#cfcfcf 100%)";
+        }
+        r.addEventListener("input", upd);
+        upd();
+      }
+      bindVolume("volInput1", "volInputVal1", "#0a5fc4");
+      bindVolume("volInput2", "volInputVal2", "#0a5fc4");
+
+      // ===== Simulasi level meter input (live waveform spt Zoom) =====
+      function animateMeter(meterId, baseLevel) {
+        var m = document.getElementById(meterId);
+        if (!m) return;
+        var segs = m.querySelectorAll(".seg");
+        var peak = baseLevel || 0.5;
+        setInterval(function () {
+          // random walk halus agar terlihat natural
+          peak += (Math.random() - 0.5) * 0.18;
+          if (peak < 0.1) peak = 0.1;
+          if (peak > 1) peak = 1;
+          var lit = Math.round(peak * segs.length);
+          segs.forEach(function (s, i) {
+            s.classList.remove("low", "mid", "high");
+            if (i < lit) {
+              if (i < segs.length * 0.6) s.classList.add("low");
+              else if (i < segs.length * 0.85) s.classList.add("mid");
+              else s.classList.add("high");
+            }
+          });
+        }, 90);
+      }
+      animateMeter("levelInput1", 0.65);
+      animateMeter("levelInput2", 0.65);
+    </script>
+  </body>
+</html>
