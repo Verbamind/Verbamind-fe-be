@@ -25,3 +25,6 @@ logs/
 # Env
 .env
 .env.local
+
+# Project config (contains local paths)
+verbamind/config/config.json

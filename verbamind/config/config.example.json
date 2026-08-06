@@ -1,0 +1,23 @@
+{
+    "backend": {
+        "host": "127.0.0.1",
+        "port": 8000
+    },
+    "database": {
+        "url": "sqlite+aiosqlite:///./verbamind.db"
+    },
+    "models": {
+        "whisper": "models/whisper/",
+        "ser": "models/ser/",
+        "llm": "models/llm/"
+    },
+    "recording": {
+        "sample_rate": 16000,
+        "channels": 2,
+        "chunk_size": 1024
+    },
+    "audio": {
+        "input_dir": "recordings/",
+        "output_format": ".vera"
+    }
+}
