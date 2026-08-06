@@ -29,7 +29,7 @@ Write-Host "`n[3/5] Upgrading pip..."
 pip install --upgrade pip --quiet
 
 Write-Host "`n[4/5] Installing core dependencies..."
-pip install fastapi uvicorn[standard] sqlalchemy aiosqlite pydantic pydantic-settings httpx alembic pycryptodome pywin32
+pip install fastapi uvicorn[standard] sqlalchemy aiosqlite pydantic pydantic-settings httpx alembic pycryptodome pywin32 pytest pytest-asyncio pytest-cov
 
 Write-Host "`n[5/5] Installing project in development mode..."
 pip install -e .
