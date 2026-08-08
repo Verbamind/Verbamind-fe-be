@@ -152,22 +152,23 @@ QLabel#section_title {
     margin: 0;
 }
 
-/* GroupBox — Windows classic with title overlay */
+/* GroupBox — Windows classic with title (inside frame, not clipped) */
 QGroupBox {
     border: 1px solid #b1b1b1;
     background: #f4f4f4;
     border-radius: 2px;
-    margin-top: 14px;
-    padding: 16px 14px 14px 14px;
+    margin-top: 22px;
+    padding: 20px 14px 14px 14px;
     color: #1a1a1a;
     font-size: 13px;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 10px;
-    top: -9px;
-    background: #ffffff;
-    padding: 0 6px;
+    subcontrol-position: top left;
+    left: 12px;
+    top: -4px;
+    background: #f0f0f0;
+    padding: 2px 8px;
     color: #5a5a5a;
     font-size: 11.5px;
     font-weight: 600;
