@@ -1,4 +1,6 @@
-"""VerbaMind main window — sidebar navigation + stacked content pages."""
+"""VerbaMind main window — sidebar navigation + backend integration."""
+
+import os
 
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -7,6 +9,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from verbamind.backend.audio.session_manager import SessionManager
+from verbamind.gui.activation_service import check_activation
 from verbamind.gui.pages.activation_page import ActivationPage
 from verbamind.gui.pages.birp_page import BIRPPage
 from verbamind.gui.pages.dashboard_page import DashboardPage
@@ -23,6 +27,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("VerbaMind")
         self.setMinimumSize(1024, 680)
         self.setStyleSheet(MAIN_STYLESHEET)
+
+        recordings_dir = os.path.join(os.getcwd(), "recordings")
+        self._session_manager = SessionManager(recordings_dir=recordings_dir)
 
         central = QWidget()
         self.setCentralWidget(central)
@@ -48,7 +55,16 @@ class MainWindow(QMainWindow):
         self._stack.addWidget(self._settings)
         self._stack.addWidget(self._activation)
 
-        self._sidebar.navigation_changed.connect(self._stack.setCurrentIndex)
+        self._sidebar.navigation_changed.connect(self._on_navigate)
 
         layout.addWidget(self._sidebar)
         layout.addWidget(self._stack, 1)
+
+        self._load_dashboard()
+
+    def _on_navigate(self, index: int):
+        self._stack.setCurrentIndex(index)
+
+    def _load_dashboard(self):
+        sessions = self._session_manager.list_sessions()
+        self._dashboard.load_sessions(sessions)

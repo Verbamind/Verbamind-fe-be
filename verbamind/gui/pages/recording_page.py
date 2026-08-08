@@ -1,6 +1,10 @@
-"""Recording page — dual-channel config, record/stop/pause, status LED."""
+"""Recording page — dual-channel config, record/stop/pause, status LED.
 
-from PySide6.QtCore import Qt
+Integrated with Recorder backend — creates .vera encrypted files on stop.
+"""
+
+import os
+
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -10,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from verbamind.backend.audio.recorder import Recorder
 from verbamind.gui.widgets.device_config import DeviceConfig
 from verbamind.gui.widgets.status_led import StatusLED
 
@@ -17,6 +22,7 @@ from verbamind.gui.widgets.status_led import StatusLED
 class RecordingPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._recorder = Recorder(mock=True)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
 
@@ -63,7 +69,13 @@ class RecordingPage(QWidget):
         layout.addLayout(controls_layout)
         layout.addStretch()
 
+    @property
+    def recorder(self) -> Recorder:
+        return self._recorder
+
     def _on_record(self):
+        filepath = os.path.join("recordings", "session_latest.vera")
+        self._recorder.start(filepath=filepath)
         self._status_led.set_active(True)
         self._status_label.setText("Recording...")
         self._record_btn.setEnabled(False)
@@ -71,12 +83,20 @@ class RecordingPage(QWidget):
         self._stop_btn.setEnabled(True)
 
     def _on_pause(self):
+        try:
+            self._recorder.pause()
+        except RuntimeError:
+            pass
         self._status_led.set_active(False)
         self._status_label.setText("Paused")
         self._pause_btn.setEnabled(False)
         self._record_btn.setEnabled(True)
 
     def _on_stop(self):
+        try:
+            self._recorder.stop()
+        except RuntimeError:
+            pass
         self._status_led.set_active(False)
         self._status_label.setText("Ready")
         self._record_btn.setEnabled(True)
