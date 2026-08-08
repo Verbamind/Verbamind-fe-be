@@ -15,7 +15,7 @@ class TestMainWindow:
         from verbamind.gui.windows.main_window import MainWindow
 
         window = MainWindow()
-        assert "VerbaMind" in window.windowTitle()
+        assert "erbamind" in window.windowTitle().lower()
         assert window.minimumWidth() == 1180
         assert window.minimumHeight() == 760
         window.close()

@@ -1,7 +1,7 @@
-"""Sidebar navigation — Windows classic with dot indicators + left accent border."""
+"""Sidebar — 5 nav items matching ui-verbamind-a.html."""
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QListWidget, QListWidgetItem
 
 
@@ -22,9 +22,10 @@ class Sidebar(QListWidget):
 
     ITEMS = [
         ("Dashboard", "📊"),
-        ("Recording", "🎙"),
-        ("Patients", "👤"),
+        ("Data Pasien", "👤"),
+        ("Sesi Baru", "🎙"),
         ("Audit Log", "📋"),
+        ("Pengaturan", "⚙"),
     ]
 
     def __init__(self, parent=None):

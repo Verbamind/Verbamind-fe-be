@@ -1,7 +1,6 @@
 """Windows classic 3D aesthetic — matches ui-verbamind-a.html spec precisely.
 
-QSS with gradient buttons, 3D panel borders, Segoe UI typography,
-sidebar dot indicators, group box title overlays, status bar.
+Every widget gets explicit color to prevent font/background blend issues.
 """
 
 COLORS = {
@@ -21,15 +20,21 @@ COLORS = {
     "led_off": "#c9c9c9",
     "warn_bg": "#fff4ce",
     "warn_border": "#d8a400",
+    "danger": "#c0392b",
+    "success": "#2e7d32",
 }
 
 MAIN_STYLESHEET = """
+/* Global default — force Segoe UI everywhere */
+QWidget {
+    font-family: "Segoe UI", "Tahoma", sans-serif;
+    font-size: 13px;
+    color: #1a1a1a;
+}
+
 QMainWindow {
     background-color: #f0f0f0;
-}
-QMainWindow::separator {
-    width: 1px;
-    background: #b1b1b1;
+    color: #1a1a1a;
 }
 
 /* Menu bar */
@@ -42,6 +47,7 @@ QMenuBar {
 }
 QMenuBar::item {
     padding: 4px 10px;
+    color: #1a1a1a;
 }
 QMenuBar::item:selected {
     background: #cfe4fb;
@@ -79,14 +85,18 @@ QListWidget#sidebar {
     border: none;
     border-right: 1px solid #b1b1b1;
     font-size: 12.5px;
+    color: #1a1a1a;
     padding: 8px 0;
+    outline: none;
 }
 QListWidget#sidebar::item {
     padding: 8px 14px;
     border-left: 3px solid transparent;
+    color: #1a1a1a;
 }
 QListWidget#sidebar::item:hover {
     background: #dcecfb;
+    color: #1a1a1a;
 }
 QListWidget#sidebar::item:selected {
     background: #cfe4fb;
@@ -95,13 +105,13 @@ QListWidget#sidebar::item:selected {
     color: #1a1a1a;
 }
 
-/* Content area */
+/* Content area — white panel */
 QWidget#content_area {
     background-color: #ffffff;
 }
 
 /* Page headers */
-QWidget#content_area QLabel#section_title {
+QLabel#section_title {
     font-size: 15px;
     font-weight: 600;
     color: #1a1a1a;
@@ -110,16 +120,15 @@ QWidget#content_area QLabel#section_title {
     margin-bottom: 12px;
 }
 
-/* GroupBox */
+/* GroupBox — Windows classic with title overlay */
 QGroupBox {
     border: 1px solid #b1b1b1;
     background: #f4f4f4;
     border-radius: 2px;
     margin-top: 14px;
     padding: 16px 14px 14px 14px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #5a5a5a;
+    color: #1a1a1a;
+    font-size: 13px;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
@@ -127,9 +136,46 @@ QGroupBox::title {
     top: -9px;
     background: #ffffff;
     padding: 0 6px;
+    color: #5a5a5a;
+    font-size: 11.5px;
+    font-weight: 600;
 }
 
-/* Buttons — 3D gradient */
+/* Labels — explicit color to prevent blend */
+QLabel {
+    color: #1a1a1a;
+    background: transparent;
+}
+QLabel#text_dim {
+    color: #5a5a5a;
+}
+QLabel#stat_number {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0a5fc4;
+}
+QLabel#stat_label {
+    font-size: 11px;
+    color: #5a5a5a;
+}
+QLabel#timer_big {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    font-family: "Consolas", "Courier New", monospace;
+}
+QLabel#status_rec {
+    font-size: 11px;
+    color: #c0392b;
+    font-weight: 600;
+}
+QLabel#birp_label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #0a5fc4;
+}
+
+/* Buttons — 3D gradient Windows classic */
 QPushButton {
     background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
         stop:0 #ffffff, stop:1 #e6e6e6);
@@ -143,12 +189,14 @@ QPushButton:hover {
     background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
         stop:0 #f2f8ff, stop:1 #dcebfb);
     border-color: #0a5fc4;
+    color: #1a1a1a;
 }
 QPushButton:pressed {
     background: #dcebfb;
 }
 QPushButton:disabled {
-    color: #b1b1b1;
+    color: #999999;
+    background: #f0f0f0;
 }
 
 /* Primary (blue) button */
@@ -162,27 +210,19 @@ QPushButton#primary_btn {
 QPushButton#primary_btn:hover {
     background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
         stop:0 #2286e6, stop:1 #0f6ad3);
+    color: #ffffff;
 }
 
-/* Record button (round red) */
-QPushButton#record_btn {
+/* Danger (red) button */
+QPushButton#danger_btn {
     background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-        stop:0 #e74c3c, stop:1 #c0392b);
-    color: #ffffff;
-    font-weight: bold;
-    border: 1px solid #a02a1f;
-    border-radius: 24px;
-    min-width: 100px;
-    min-height: 42px;
-    font-size: 14px;
-    padding: 8px 24px;
+        stop:0 #ffffff, stop:1 #fbeaea);
+    border-color: #c0392b;
+    color: #a02a1f;
 }
-QPushButton#record_btn:hover {
-    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
-        stop:0 #ef5350, stop:1 #d32f2f);
-}
-QPushButton#record_btn:pressed {
-    background: #b71c1c;
+QPushButton#danger_btn:hover {
+    background: #f9d6d2;
+    color: #a02a1f;
 }
 
 /* Small button */
@@ -197,10 +237,15 @@ QLineEdit {
     background: #ffffff;
     padding: 5px 6px;
     font-size: 12.5px;
+    color: #1a1a1a;
     border-radius: 2px;
 }
 QLineEdit:focus {
     border-color: #0a5fc4;
+}
+QLineEdit:disabled {
+    background: #efefef;
+    color: #5a5a5a;
 }
 
 /* ComboBox */
@@ -209,10 +254,15 @@ QComboBox {
     background: #ffffff;
     padding: 5px 6px;
     font-size: 12.5px;
+    color: #1a1a1a;
     border-radius: 2px;
 }
 QComboBox:focus {
     border-color: #0a5fc4;
+}
+QComboBox:disabled {
+    background: #efefef;
+    color: #5a5a5a;
 }
 QComboBox::drop-down {
     border: none;
@@ -221,7 +271,9 @@ QComboBox::drop-down {
 QComboBox QAbstractItemView {
     border: 1px solid #b1b1b1;
     background: #ffffff;
+    color: #1a1a1a;
     selection-background-color: #cfe4fb;
+    selection-color: #1a1a1a;
 }
 
 /* Table */
@@ -230,10 +282,15 @@ QTableWidget {
     border: 1px solid #b1b1b1;
     gridline-color: #dddddd;
     font-size: 12px;
+    color: #1a1a1a;
     alternate-background-color: #f7f9fb;
 }
 QTableWidget::item {
     padding: 6px 8px;
+    color: #1a1a1a;
+}
+QTableWidget::item:alternate {
+    background: #f7f9fb;
 }
 QTableWidget::item:selected {
     background: #cfe4fb;
@@ -279,37 +336,70 @@ QStatusBar {
     color: #5a5a5a;
     padding: 2px 10px;
 }
+QStatusBar::item {
+    border: none;
+}
+QStatusBar QLabel {
+    color: #5a5a5a;
+    background: transparent;
+}
 
-/* TextEdit for BIRP */
+/* TextEdit for BIRP — Consolas font */
 QTextEdit {
     border: 1px solid #b1b1b1;
     background: #ffffff;
     padding: 6px 8px;
     font-family: "Consolas", "Segoe UI", monospace;
     font-size: 12px;
+    color: #1a1a1a;
     border-radius: 2px;
 }
 QTextEdit:focus {
     border-color: #0a5fc4;
 }
 
-/* Modern label styling */
-QLabel#stat_number {
-    font-size: 22px;
-    font-weight: 700;
-    color: #0a5fc4;
-}
-QLabel#stat_label {
-    font-size: 11px;
-    color: #5a5a5a;
+/* TextEdit read-only (disabled) */
+QTextEdit[readOnly="true"] {
+    background: #fafafa;
+    color: #1a1a1a;
 }
 
-/* Badge */
-QLabel#emotion_badge {
-    padding: 2px 8px;
-    border-radius: 9px;
-    font-size: 10.5px;
-    font-weight: 600;
-    color: #ffffff;
+/* Progress bar */
+QProgressBar {
+    border: 1px solid #b1b1b1;
+    background: #ffffff;
+    border-radius: 2px;
+    height: 16px;
+    color: #1a1a1a;
+    text-align: center;
+}
+QProgressBar::chunk {
+    background: qlineargradient(x1:0 y1:0, x2:0 y2:1,
+        stop:0 #1a78d6, stop:1 #0a5fc4);
+}
+
+/* Slider */
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #cfcfcf;
+    border-radius: 3px;
+}
+QSlider::handle:horizontal {
+    width: 14px;
+    height: 14px;
+    margin: -5px 0;
+    background: #ffffff;
+    border: 1px solid #0a5fc4;
+    border-radius: 7px;
+}
+QSlider::sub-page:horizontal {
+    background: #0a5fc4;
+    border-radius: 3px;
+}
+
+/* Message box / dialog */
+QDialog {
+    background: #f0f0f0;
+    color: #1a1a1a;
 }
 """
