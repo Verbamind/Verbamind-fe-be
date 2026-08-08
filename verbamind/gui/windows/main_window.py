@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QScrollArea,
     QStackedWidget,
     QStatusBar,
     QToolBar,
@@ -34,7 +35,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Verbamind AI")
-        self.setMinimumSize(1180, 760)
+        self.resize(1000, 660)
+        self.setMinimumSize(800, 560)
         self.setStyleSheet(MAIN_STYLESHEET)
 
         self._session_manager = SessionManager(
@@ -112,7 +114,14 @@ class MainWindow(QMainWindow):
             container.setObjectName("content_area")
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
-            container_layout.addWidget(page)
+
+            scroll = QScrollArea()
+            scroll.setObjectName("content_scroll")
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+            scroll.setWidget(page)
+
+            container_layout.addWidget(scroll)
             self._stack.addWidget(container)
 
         self._sidebar.navigation_changed.connect(self._on_navigate)
