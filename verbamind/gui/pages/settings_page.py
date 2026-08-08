@@ -1,6 +1,7 @@
 """Settings page — database info, audio config, license info."""
 
 from PySide6.QtCore import Qt
+from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -20,8 +21,7 @@ class SettingsPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        title = QLabel("Settings")
-        title.setObjectName("section_title")
+        title = SectionTitle("Pengaturan")
 
         content = QWidget()
         content_layout = QVBoxLayout(content)

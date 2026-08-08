@@ -142,17 +142,14 @@ QWidget#content_area {
     background-color: #ffffff;
 }
 
-/* Page headers — explicit padding agar tidak terpotong */
+/* Page headers — handled by SectionTitle widget (QFrame separator) */
 QLabel#section_title {
     font-size: 15px;
     font-weight: 600;
     color: #1a1a1a;
     background: transparent;
-    border: none;
-    border-bottom: 1px solid #b1b1b1;
-    padding: 8px 4px 12px 4px;
-    margin: 0 0 16px 0;
-    text-align: left;
+    padding: 0;
+    margin: 0;
 }
 
 /* GroupBox — Windows classic with title overlay */

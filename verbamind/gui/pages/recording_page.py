@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from verbamind.gui.widgets.section_title import SectionTitle
 from verbamind.gui.widgets.status_led import StatusLED
 
 
@@ -83,8 +84,7 @@ class RecordingPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(14)
 
-        title = QLabel("Sesi Baru / Perekaman")
-        title.setObjectName("section_title")
+        title = SectionTitle("Sesi Baru / Perekaman")
 
         # Detail Sesi
         detail_group = QGroupBox("Detail Sesi")

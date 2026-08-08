@@ -1,6 +1,7 @@
 """BIRP page — editable fields with labels (Behavior, Intervention, Response, Plan)."""
 
 from PySide6.QtCore import Qt
+from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -27,8 +28,7 @@ class BIRPPage(QWidget):
         layout.setSpacing(12)
 
         header = QHBoxLayout()
-        title = QLabel("BIRP Clinical Summary")
-        title.setObjectName("section_title")
+        title = SectionTitle("BIRP Clinical Summary")
         self._status_label = QLabel("")
         self._status_label.setStyleSheet(
             "font-size: 11px; font-weight: 600; padding: 3px 10px; "

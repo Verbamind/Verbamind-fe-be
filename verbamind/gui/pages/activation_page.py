@@ -1,6 +1,7 @@
 """Activation page — HWID display, license key input, activation flow."""
 
 from PySide6.QtCore import Qt
+from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -19,8 +20,7 @@ class ActivationPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(14)
 
-        title = QLabel("License Activation")
-        title.setObjectName("section_title")
+        title = SectionTitle("Aktivasi Lisensi")
 
         hwid_group = QGroupBox("Hardware ID")
         hwid_layout = QVBoxLayout(hwid_group)

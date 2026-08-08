@@ -1,6 +1,7 @@
 """Audit Log page — table of system actions with date filter. Empty by default."""
 
 from PySide6.QtCore import Qt
+from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -23,8 +24,7 @@ class AuditLogPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        title = QLabel("Audit Log")
-        title.setObjectName("section_title")
+        title = SectionTitle("Audit Log")
 
         filter_row = QHBoxLayout()
         action_combo = QComboBox()

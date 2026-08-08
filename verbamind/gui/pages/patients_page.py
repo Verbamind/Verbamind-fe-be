@@ -1,6 +1,7 @@
 """Patients page — data pasien dengan search dan tabel. Empty by default."""
 
 from PySide6.QtCore import Qt
+from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -22,8 +23,7 @@ class PatientsPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        title = QLabel("Data Pasien")
-        title.setObjectName("section_title")
+        title = SectionTitle("Data Pasien")
 
         search_row = QHBoxLayout()
         search_input = QLineEdit()

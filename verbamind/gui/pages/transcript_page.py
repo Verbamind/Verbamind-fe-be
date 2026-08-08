@@ -1,6 +1,7 @@
 """Transcript page — table-based verbatim with emotion badges and timestamps."""
 
 from PySide6.QtCore import Qt
+from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
@@ -47,8 +48,7 @@ class TranscriptPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        title = QLabel("Transcript & Verbatim")
-        title.setObjectName("section_title")
+        title = SectionTitle("Transcript & Verbatim")
 
         self._table = QTableWidget()
         self._table.setAlternatingRowColors(True)
