@@ -19,10 +19,7 @@ from PySide6.QtWidgets import (
 class StatCard(QWidget):
     def __init__(self, number: str, label: str, parent=None):
         super().__init__(parent)
-        self.setStyleSheet(
-            "QWidget { border: 1px solid #b1b1b1; background: #ffffff; "
-            "border-radius: 2px; padding: 10px 12px; }"
-        )
+        self.setObjectName("stat_card")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(2)
@@ -38,7 +35,7 @@ class DashboardPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
         title = QLabel("Dashboard")

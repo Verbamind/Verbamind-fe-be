@@ -142,7 +142,7 @@ QWidget#content_area {
     background-color: #ffffff;
 }
 
-/* Page headers */
+/* Page headers — explicit padding agar tidak terpotong */
 QLabel#section_title {
     font-size: 15px;
     font-weight: 600;
@@ -150,9 +150,9 @@ QLabel#section_title {
     background: transparent;
     border: none;
     border-bottom: 1px solid #b1b1b1;
-    padding: 4px 0 10px 0;
-    margin: 0 0 14px 0;
-    min-height: 24px;
+    padding: 8px 4px 12px 4px;
+    margin: 0 0 16px 0;
+    text-align: left;
 }
 
 /* GroupBox — Windows classic with title overlay */
@@ -188,10 +188,17 @@ QLabel#stat_number {
     font-size: 22px;
     font-weight: 700;
     color: #0a5fc4;
+    background: transparent;
 }
 QLabel#stat_label {
     font-size: 11px;
     color: #5a5a5a;
+    background: transparent;
+}
+QWidget#stat_card {
+    border: 1px solid #b1b1b1;
+    background: #ffffff;
+    border-radius: 2px;
 }
 QLabel#timer_big {
     font-size: 28px;
@@ -270,10 +277,11 @@ QPushButton#small_btn {
 QLineEdit {
     border: 1px solid #b1b1b1;
     background: #ffffff;
-    padding: 5px 6px;
+    padding: 6px 8px;
     font-size: 12.5px;
     color: #1a1a1a;
     border-radius: 2px;
+    min-height: 20px;
 }
 QLineEdit:focus {
     border-color: #0a5fc4;
@@ -281,6 +289,10 @@ QLineEdit:focus {
 QLineEdit:disabled {
     background: #efefef;
     color: #5a5a5a;
+}
+QLineEdit[readOnly="true"] {
+    background: #fafafa;
+    color: #1a1a1a;
 }
 
 /* ComboBox */

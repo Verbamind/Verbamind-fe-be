@@ -44,7 +44,7 @@ class TranscriptPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
         title = QLabel("Transcript & Verbatim")
