@@ -17,8 +17,8 @@ def test_mainwindow_creation():
     app = QApplication.instance() or QApplication([])
     window = MainWindow()
     assert window.windowTitle() == "VerbaMind"
-    assert window.minimumWidth() == 800
-    assert window.minimumHeight() == 600
+    assert window.minimumWidth() == 1024
+    assert window.minimumHeight() == 680
     window.close()
 
 
