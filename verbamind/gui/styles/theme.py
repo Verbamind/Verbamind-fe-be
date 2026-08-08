@@ -350,10 +350,16 @@ QHeaderView::section {
     color: #5a5a5a;
 }
 
-/* Scroll area */
+/* Scroll area — explicit white bg to prevent black viewport */
 QScrollArea {
     border: none;
-    background: transparent;
+    background: #ffffff;
+}
+QScrollArea > QWidget > QWidget {
+    background: #ffffff;
+}
+QScrollArea QViewport {
+    background: #ffffff;
 }
 QScrollBar:vertical {
     background: #f0f0f0;
