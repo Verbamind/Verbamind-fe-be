@@ -48,9 +48,41 @@ QMenuBar {
 QMenuBar::item {
     padding: 4px 10px;
     color: #1a1a1a;
+    background: transparent;
 }
 QMenuBar::item:selected {
     background: #cfe4fb;
+    color: #1a1a1a;
+}
+QMenuBar::item:pressed {
+    background: #0a5fc4;
+    color: #ffffff;
+}
+
+/* Dropdown menu — explicit background + text color */
+QMenu {
+    background: #ffffff;
+    border: 1px solid #b1b1b1;
+    color: #1a1a1a;
+    padding: 4px;
+    font-size: 12px;
+}
+QMenu::item {
+    padding: 6px 24px;
+    color: #1a1a1a;
+    background: transparent;
+}
+QMenu::item:selected {
+    background: #cfe4fb;
+    color: #1a1a1a;
+}
+QMenu::item:disabled {
+    color: #999999;
+}
+QMenu::separator {
+    height: 1px;
+    background: #b1b1b1;
+    margin: 4px 8px;
 }
 
 /* Toolbar */
@@ -115,9 +147,12 @@ QLabel#section_title {
     font-size: 15px;
     font-weight: 600;
     color: #1a1a1a;
+    background: transparent;
+    border: none;
     border-bottom: 1px solid #b1b1b1;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
+    padding: 4px 0 10px 0;
+    margin: 0 0 14px 0;
+    min-height: 24px;
 }
 
 /* GroupBox — Windows classic with title overlay */
