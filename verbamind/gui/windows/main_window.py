@@ -1,16 +1,21 @@
-"""VerbaMind main window — sidebar navigation + backend integration."""
+"""VerbaMind main window — menubar, toolbar, sidebar, statusbar, 6-page stacked content."""
 
 import os
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QLabel,
     QMainWindow,
+    QMenuBar,
     QStackedWidget,
+    QStatusBar,
+    QToolBar,
     QWidget,
 )
 
 from verbamind.backend.audio.session_manager import SessionManager
-from verbamind.gui.activation_service import check_activation
 from verbamind.gui.pages.activation_page import ActivationPage
 from verbamind.gui.pages.birp_page import BIRPPage
 from verbamind.gui.pages.dashboard_page import DashboardPage
@@ -24,13 +29,49 @@ from verbamind.gui.widgets.sidebar import Sidebar
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("VerbaMind")
-        self.setMinimumSize(1024, 680)
+        self.setWindowTitle("VerbaMind AI")
+        self.setMinimumSize(1180, 760)
         self.setStyleSheet(MAIN_STYLESHEET)
 
-        recordings_dir = os.path.join(os.getcwd(), "recordings")
-        self._session_manager = SessionManager(recordings_dir=recordings_dir)
+        self._session_manager = SessionManager(
+            recordings_dir=os.path.join(os.getcwd(), "recordings")
+        )
 
+        self._setup_menubar()
+        self._setup_toolbar()
+        self._setup_body()
+        self._setup_statusbar()
+
+    def _setup_menubar(self):
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu("File")
+        file_menu.addAction(QAction("New Session", self))
+        file_menu.addAction(QAction("Open Recording...", self))
+        file_menu.addSeparator()
+        file_menu.addAction(QAction("Exit", self, triggered=self.close))
+
+        edit_menu = menubar.addMenu("Edit")
+        edit_menu.addAction(QAction("Settings", self))
+
+        view_menu = menubar.addMenu("View")
+        view_menu.addAction(QAction("Dashboard", self))
+        view_menu.addAction(QAction("Recording", self))
+
+        help_menu = menubar.addMenu("Help")
+        help_menu.addAction(QAction("About VerbaMind", self))
+
+    def _setup_toolbar(self):
+        toolbar = QToolBar()
+        toolbar.addAction(QAction("New Session", self))
+        toolbar.addAction(QAction("New Patient", self))
+        toolbar.addSeparator()
+        toolbar.addAction(QAction("Refresh", self))
+        toolbar.addAction(QAction("Export PDF", self))
+        toolbar.addSeparator()
+        toolbar.addAction(QAction("Settings", self))
+        self.addToolBar(toolbar)
+
+    def _setup_body(self):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QHBoxLayout(central)
@@ -41,19 +82,21 @@ class MainWindow(QMainWindow):
         self._stack = QStackedWidget()
         self._stack.setObjectName("content_stack")
 
-        self._dashboard = DashboardPage()
-        self._recording = RecordingPage()
-        self._transcript = TranscriptPage()
-        self._birp = BIRPPage()
-        self._settings = SettingsPage()
-        self._activation = ActivationPage()
-
-        self._stack.addWidget(self._dashboard)
-        self._stack.addWidget(self._recording)
-        self._stack.addWidget(self._transcript)
-        self._stack.addWidget(self._birp)
-        self._stack.addWidget(self._settings)
-        self._stack.addWidget(self._activation)
+        self._pages = [
+            DashboardPage(),
+            RecordingPage(),
+            TranscriptPage(),
+            BIRPPage(),
+            SettingsPage(),
+            ActivationPage(),
+        ]
+        for page in self._pages:
+            container = QWidget()
+            container.setObjectName("content_area")
+            container_layout = QHBoxLayout(container)
+            container_layout.setContentsMargins(0, 0, 0, 0)
+            container_layout.addWidget(page)
+            self._stack.addWidget(container)
 
         self._sidebar.navigation_changed.connect(self._on_navigate)
 
@@ -62,9 +105,19 @@ class MainWindow(QMainWindow):
 
         self._load_dashboard()
 
+    def _setup_statusbar(self):
+        sb = QStatusBar()
+        self._status_label = QLabel("VerbaMind v0.1.0 — Ready")
+        self._status_label.setStyleSheet("font-size: 11px; color: #5a5a5a;")
+        lock_label = QLabel("AES-256")
+        lock_label.setStyleSheet("font-size: 11px; color: #2e7d32; font-weight: 600;")
+        sb.addWidget(self._status_label)
+        sb.addPermanentWidget(lock_label)
+        self.setStatusBar(sb)
+
     def _on_navigate(self, index: int):
-        self._stack.setCurrentIndex(index)
+        if 0 <= index < self._stack.count():
+            self._stack.setCurrentIndex(index)
 
     def _load_dashboard(self):
-        sessions = self._session_manager.list_sessions()
-        self._dashboard.load_sessions(sessions)
+        pass

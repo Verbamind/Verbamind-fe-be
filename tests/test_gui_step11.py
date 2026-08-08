@@ -1,7 +1,4 @@
-"""TDD tests for GUI — settings and activation pages.
-
-RED phase: all imports will fail since modules don't exist yet.
-"""
+"""TDD tests for GUI — settings and activation pages."""
 
 import pytest
 from PySide6.QtWidgets import QApplication
@@ -27,7 +24,7 @@ class TestSettingsPage:
         page = SettingsPage()
         groups = page.findChildren(QGroupBox)
         titles = [g.title() for g in groups]
-        assert any("microphone" in t.lower() or "audio" in t.lower() for t in titles)
+        assert any("audio" in t.lower() or "microphone" in t.lower() for t in titles)
 
     def test_settings_has_database_info(self, qapp):
         from verbamind.gui.pages.settings_page import SettingsPage

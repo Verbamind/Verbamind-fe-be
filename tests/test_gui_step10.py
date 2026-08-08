@@ -1,7 +1,4 @@
-"""TDD tests for GUI — transcript viewer and BIRP viewer pages.
-
-RED phase: all imports will fail since modules don't exist yet.
-"""
+"""TDD tests for GUI — transcript viewer and BIRP viewer pages."""
 
 import pytest
 from PySide6.QtWidgets import QApplication
@@ -69,17 +66,18 @@ class TestBIRPPage:
         page.load_birp(birp_data)
         assert page.has_data()
 
-    def test_birp_fields_displayed(self, qapp):
+    def test_birp_fields_loaded(self, qapp):
         from verbamind.gui.pages.birp_page import BIRPPage
-        from PySide6.QtWidgets import QFrame
+        from PySide6.QtWidgets import QTextEdit
 
         page = BIRPPage()
         page.load_birp({
             "behavior": "B", "intervention": "I",
             "response": "R", "plan": "P",
         })
-        cards = page.findChildren(QFrame, "birp_card")
-        assert len(cards) == 4
+        for key in ("behavior", "intervention", "response", "plan"):
+            editor = page.findChild(QTextEdit, f"birp_{key}")
+            assert editor is not None
 
     def test_birp_pending_state(self, qapp):
         from verbamind.gui.pages.birp_page import BIRPPage

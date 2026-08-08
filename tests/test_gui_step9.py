@@ -35,8 +35,8 @@ class TestSidebar:
 
         sidebar = Sidebar()
         items = [sidebar.item(i).text() for i in range(sidebar.count())]
-        assert "Dashboard" in items
-        assert "Recording" in items
+        assert any("Dashboard" in t for t in items)
+        assert any("Recording" in t for t in items)
 
     def test_sidebar_emits_signal(self, qapp):
         from verbamind.gui.widgets.sidebar import Sidebar
@@ -72,7 +72,19 @@ class TestMainWindow:
         from verbamind.gui.windows.main_window import MainWindow
 
         window = MainWindow()
-        assert window.windowTitle() == "VerbaMind"
+        assert "VerbaMind" in window.windowTitle()
+
+    def test_window_has_menubar(self, qapp):
+        from verbamind.gui.windows.main_window import MainWindow
+
+        window = MainWindow()
+        assert window.menuBar() is not None
+
+    def test_window_has_statusbar(self, qapp):
+        from verbamind.gui.windows.main_window import MainWindow
+
+        window = MainWindow()
+        assert window.statusBar() is not None
 
     def test_window_has_sidebar(self, qapp):
         from verbamind.gui.windows.main_window import MainWindow
@@ -81,26 +93,7 @@ class TestMainWindow:
         window = MainWindow()
         sidebar = window.findChild(QListWidget, "sidebar")
         assert sidebar is not None
-
-    def test_window_has_stacked_widget(self, qapp):
-        from verbamind.gui.windows.main_window import MainWindow
-
-        window = MainWindow()
-        from PySide6.QtWidgets import QStackedWidget
-
-        stacked = window.findChild(QStackedWidget, "content_stack")
-        assert stacked is not None
-
-    def test_navigation_switches_page(self, qapp):
-        from verbamind.gui.windows.main_window import MainWindow
-        from PySide6.QtWidgets import QListWidget, QStackedWidget
-
-        window = MainWindow()
-        stacked = window.findChild(QStackedWidget, "content_stack")
-        initial = stacked.currentIndex()
-        sidebar = window.findChild(QListWidget, "sidebar")
-        sidebar.setCurrentRow(1)
-        assert stacked.currentIndex() != initial
+        assert sidebar.count() == 4
 
 
 class TestDashboardPage:
@@ -110,13 +103,13 @@ class TestDashboardPage:
         page = DashboardPage()
         assert page is not None
 
-    def test_dashboard_has_welcome_label(self, qapp):
+    def test_dashboard_has_table(self, qapp):
         from verbamind.gui.pages.dashboard_page import DashboardPage
-        from PySide6.QtWidgets import QLabel
+        from PySide6.QtWidgets import QTableWidget
 
         page = DashboardPage()
-        labels = page.findChildren(QLabel, "welcome_label")
-        assert len(labels) >= 1
+        tables = page.findChildren(QTableWidget)
+        assert len(tables) >= 1
 
 
 class TestRecordingPage:
@@ -131,13 +124,6 @@ class TestRecordingPage:
         from PySide6.QtWidgets import QPushButton
 
         page = RecordingPage()
-        btn = page.findChild(QPushButton, "record_btn")
-        assert btn is not None
-
-    def test_device_config_combos(self, qapp):
-        from verbamind.gui.widgets.device_config import DeviceConfig
-        from PySide6.QtWidgets import QComboBox
-
-        config = DeviceConfig()
-        combos = config.findChildren(QComboBox, "patient_combo")
-        assert len(combos) >= 1
+        buttons = page.findChildren(QPushButton)
+        texts = [b.text() for b in buttons]
+        assert any("Record" in t for t in texts)

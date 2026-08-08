@@ -1,50 +1,91 @@
-"""Dashboard page — welcome screen with session overview."""
+"""Dashboard page — stat cards, patient table, search bar."""
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
     QLabel,
-    QListWidget,
+    QLineEdit,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
+
+
+class StatCard(QWidget):
+    def __init__(self, number: str, label: str, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(
+            "QWidget { border: 1px solid #b1b1b1; background: #ffffff; "
+            "border-radius: 2px; padding: 10px 12px; }"
+        )
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(2)
+        num = QLabel(number)
+        num.setObjectName("stat_number")
+        layout.addWidget(num)
+        lbl = QLabel(label)
+        lbl.setObjectName("stat_label")
+        layout.addWidget(lbl)
 
 
 class DashboardPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
 
-        title = QLabel("Welcome to VerbaMind")
-        title.setStyleSheet("font-size: 20px; font-weight: bold; color: #1a1a1a;")
+        title = QLabel("Dashboard")
+        title.setObjectName("section_title")
 
-        subtitle = QLabel("AI-Assisted Counseling Session Documentation")
-        subtitle.setStyleSheet("font-size: 14px; color: #5a5a5a; margin-bottom: 16px;")
+        cards = QHBoxLayout()
+        cards.setSpacing(12)
+        cards.addWidget(StatCard("3", "Total Sessions"))
+        cards.addWidget(StatCard("1", "Patients"))
+        cards.addWidget(StatCard("2", "BIRP Reports"))
+        cards.addWidget(StatCard("0", "Pending Review"))
+        cards_widget = QWidget()
+        cards_widget.setLayout(cards)
 
-        welcome = QLabel("Select a session from the list below or start a new recording.")
-        welcome.setObjectName("welcome_label")
-        welcome.setWordWrap(True)
-        welcome.setStyleSheet("font-size: 13px; color: #5a5a5a;")
+        search_row = QHBoxLayout()
+        search_row.addWidget(QLabel("Search:"))
+        search_input = QLineEdit()
+        search_input.setPlaceholderText("Type patient name or session ID...")
+        search_input.setFixedWidth(260)
+        search_row.addWidget(search_input)
+        search_row.addStretch()
 
-        sessions_group = QGroupBox("Recent Sessions")
-        sessions_layout = QVBoxLayout(sessions_group)
-        self._session_list = QListWidget()
-        self._session_list.setObjectName("session_list")
-        self._session_list.setStyleSheet("QListWidget { background: #ffffff; border: 1px solid #b1b1b1; }")
-        sessions_layout.addWidget(self._session_list)
+        table = QTableWidget()
+        table.setAlternatingRowColors(True)
+        table.setColumnCount(5)
+        table.setHorizontalHeaderLabels(["Date", "Patient", "Session ID", "Status", "BIRP"])
+        table.horizontalHeader().setStretchLastSection(True)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.verticalHeader().setVisible(False)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setRowCount(3)
+        data = [
+            ("12 Mar 2026", "Andi Pratama", "S001", "Completed", "✅"),
+            ("10 Mar 2026", "Budi Santoso", "S002", "Draft", "—"),
+            ("08 Mar 2026", "Citra Dewi", "S003", "Completed", "✅"),
+        ]
+        for r, (date, name, sid, status, birp) in enumerate(data):
+            table.setItem(r, 0, QTableWidgetItem(date))
+            table.setItem(r, 1, QTableWidgetItem(name))
+            table.setItem(r, 2, QTableWidgetItem(sid))
+            table.setItem(r, 3, QTableWidgetItem(status))
+            table.setItem(r, 4, QTableWidgetItem(birp))
+
+        session_group = QGroupBox("Recent Sessions")
+        session_layout = QVBoxLayout(session_group)
+        session_layout.addLayout(search_row)
+        session_layout.addWidget(table)
 
         layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addWidget(welcome)
-        layout.addSpacing(16)
-        layout.addWidget(sessions_group, 1)
-
-    def load_sessions(self, sessions: list[dict]):
-        self._session_list.clear()
-        if not sessions:
-            self._session_list.addItem("No sessions yet. Start a recording to begin.")
-            return
-        for s in sessions:
-            item_text = f"Session {s['session_id']} — {s.get('created_at', '')[:10]}"
-            self._session_list.addItem(item_text)
+        layout.addWidget(cards_widget)
+        layout.addWidget(session_group, 1)

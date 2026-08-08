@@ -1,7 +1,7 @@
-"""Status LED widget — green when recording, gray when idle."""
+"""Status LED — green with glow when recording, gray when idle."""
 
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtCore import QRect, QSize
+from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 
@@ -9,7 +9,7 @@ class StatusLED(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._active = False
-        self.setFixedSize(16, 16)
+        self.setFixedSize(14, 14)
 
     @property
     def state(self) -> str:
@@ -22,7 +22,18 @@ class StatusLED(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        color = QColor("#2ecc57") if self._active else QColor("#c9c9c9")
-        painter.setBrush(color)
-        painter.setPen(QColor("#b1b1b1"))
-        painter.drawEllipse(2, 2, 12, 12)
+        if self._active:
+            color = QColor("#2ecc57")
+            painter.setBrush(color)
+            painter.setPen(QPen(QColor("#27ae60"), 1))
+            painter.drawEllipse(1, 1, 11, 11)
+            glow = QColor("#2ecc57")
+            glow.setAlpha(60)
+            painter.setBrush(glow)
+            painter.setPen(Qt.NoPen)
+            painter.drawEllipse(-1, -1, 15, 15)
+        else:
+            color = QColor("#c9c9c9")
+            painter.setBrush(color)
+            painter.setPen(QPen(QColor("#999999"), 1))
+            painter.drawEllipse(1, 1, 11, 11)

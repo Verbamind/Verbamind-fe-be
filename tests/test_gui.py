@@ -1,35 +1,34 @@
-"""Tests for GUI scaffolding — PySide6 window creation and properties."""
-
-import sys
+"""Tests for GUI scaffolding — verifies imports and window creation."""
 
 import pytest
+from PySide6.QtWidgets import QApplication
 
 
-@pytest.mark.skipif(
-    sys.platform != "win32",
-    reason="VerbaMind is Windows-only",
-)
-def test_mainwindow_creation():
-    from PySide6.QtWidgets import QApplication
-
-    from verbamind.main import MainWindow
-
+@pytest.fixture(scope="session")
+def qapp():
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
-    assert window.windowTitle() == "VerbaMind"
-    assert window.minimumWidth() == 1024
-    assert window.minimumHeight() == 680
-    window.close()
+    yield app
 
 
-def test_backend_imports():
-    from verbamind.backend.main import app
+class TestMainWindow:
+    def test_mainwindow_creation(self, qapp):
+        from verbamind.gui.windows.main_window import MainWindow
 
-    assert app.title == "VerbaMind Backend"
-    assert app.version == "0.1.0"
+        window = MainWindow()
+        assert "VerbaMind" in window.windowTitle()
+        assert window.minimumWidth() == 1180
+        assert window.minimumHeight() == 760
+        window.close()
 
 
-def test_config_port():
-    from verbamind.config.config import get_backend_port
+class TestBackendImports:
+    def test_backend_imports(self):
+        from verbamind.backend.main import app
 
-    assert get_backend_port() == 8000
+        assert app.title == "VerbaMind Backend"
+        assert app.version == "0.1.0"
+
+    def test_config_port(self):
+        from verbamind.config.config import get_backend_port
+
+        assert get_backend_port() == 8000

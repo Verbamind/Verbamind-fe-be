@@ -1,71 +1,98 @@
-"""Transcript viewer page — scrollable segments with speaker labels and emotions."""
+"""Transcript page — table-based verbatim with emotion badges and timestamps."""
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QGroupBox,
+    QAbstractItemView,
+    QHeaderView,
     QLabel,
-    QScrollArea,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
+
+EMOTION_COLORS = {
+    "sedih": "#3b6fb5",
+    "marah": "#c0392b",
+    "netral": "#8a8a8a",
+    "senang": "#2e9e5b",
+    "cemas": "#c8790b",
+    "anxious": "#c8790b",
+    "sad": "#3b6fb5",
+    "angry": "#c0392b",
+    "neutral": "#8a8a8a",
+    "happy": "#2e9e5b",
+    "calm": "#2e9e5b",
+    "fearful": "#c8790b",
+}
+
+
+def _emotion_badge(emotion: str, confidence: float | None = None) -> str:
+    emoji_map = {
+        "sedih": "😢", "sad": "😢",
+        "marah": "😠", "angry": "😠",
+        "netral": "😐", "neutral": "😐",
+        "senang": "😊", "happy": "😊", "calm": "😊",
+        "cemas": "😰", "anxious": "😰", "fearful": "😰",
+    }
+    emoji = emoji_map.get(str(emotion).lower(), "")
+    conf = f" {confidence:.0%}" if confidence else ""
+    return f"{emoji} {emotion}{conf}"
 
 
 class TranscriptPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
 
-        title = QLabel("Transcript")
+        title = QLabel("Transcript & Verbatim")
         title.setObjectName("section_title")
-        title.setStyleSheet("font-size: 20px; font-weight: bold; color: #1a1a1a;")
 
-        self._segments_layout = QVBoxLayout()
-        self._segments_container = QWidget()
-        self._segments_container.setLayout(self._segments_layout)
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(self._segments_container)
-        scroll.setStyleSheet("QScrollArea { border: none; background: #ffffff; }")
+        self._table = QTableWidget()
+        self._table.setAlternatingRowColors(True)
+        self._table.setColumnCount(5)
+        self._table.setHorizontalHeaderLabels(["Time", "Speaker", "Text", "Emotion", "Physiological"])
+        self._table.horizontalHeader().setStretchLastSection(True)
+        self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self._table.verticalHeader().setVisible(False)
+        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self._segment_count = 0
-
         layout.addWidget(title)
-        layout.addSpacing(8)
-        layout.addWidget(scroll, 1)
+        layout.addWidget(self._table, 1)
 
     def segment_count(self) -> int:
         return self._segment_count
 
     def load_transcript(self, segments: list[dict]) -> None:
-        for i in reversed(range(self._segments_layout.count())):
-            w = self._segments_layout.itemAt(i).widget()
-            if w:
-                w.setParent(None)
+        self._table.setRowCount(len(segments))
         self._segment_count = 0
+        for i, seg in enumerate(segments):
+            speaker = seg.get("speaker", "unknown").capitalize()
+            text = seg.get("text", "")
+            emotion = seg.get("emotion")
+            confidence = seg.get("emotion_confidence")
+            start = seg.get("start", 0.0)
 
-        for seg in segments:
-            self._add_segment(seg)
+            time_item = QTableWidgetItem(f"{start:.1f}s")
+            speaker_item = QTableWidgetItem(speaker)
+            text_item = QTableWidgetItem(text)
+
+            if emotion:
+                badge = _emotion_badge(str(emotion), confidence)
+            else:
+                badge = "—"
+            emotion_item = QTableWidgetItem(badge)
+
+            physio = "—"
+            if emotion and confidence and confidence > 0.7:
+                physio = "Detected"
+
+            self._table.setItem(i, 0, time_item)
+            self._table.setItem(i, 1, speaker_item)
+            self._table.setItem(i, 2, text_item)
+            self._table.setItem(i, 3, QTableWidgetItem(badge))
+            self._table.setItem(i, 4, QTableWidgetItem(physio))
             self._segment_count += 1
-
-    def _add_segment(self, seg: dict) -> None:
-        speaker = seg.get("speaker", "unknown").capitalize()
-        text = seg.get("text", "")
-        emotion = seg.get("emotion")
-        confidence = seg.get("emotion_confidence")
-        start = seg.get("start", 0.0)
-        end = seg.get("end", 0.0)
-
-        seg_text = f"[{start:.1f}s - {end:.1f}s] {speaker}: {text}"
-        if emotion:
-            seg_text += f"  [{emotion} ({confidence:.0%})]" if confidence else f"  [{emotion}]"
-
-        label = QLabel(seg_text)
-        label.setWordWrap(True)
-        label.setStyleSheet(
-            "background: #ffffff; border: 1px solid #e0e0e0; border-radius: 4px; "
-            "padding: 8px 12px; margin: 2px 0; font-size: 13px;"
-        )
-        self._segments_layout.addWidget(label)
-        self._segments_layout.addStretch()
