@@ -1,106 +1,62 @@
-"""RAG Retriever — FAISS-based semantic search for clinical knowledge base.
+"""RAG Retriever — FAISS semantic search over clinical knowledge base.
 
-Adapted from Verbamind_RAG's main_rag.py retrieval logic.
-Uses multilingual embedding model for Indonesian text support.
+Adapted from Verbamind_RAG src/main_rag.py — muat_index_faiss + ambil_konteks_relevan.
 """
 
-from __future__ import annotations
-
-import logging
+import sys
 from pathlib import Path
 
-# Import at module level for mock patching in tests
 try:
-    from langchain_community.vectorstores import FAISS  # noqa: F401
-    from langchain_huggingface import HuggingFaceEmbeddings  # noqa: F401
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_community.vectorstores import FAISS
 except ImportError:
-    FAISS = None  # type: ignore[assignment]
-    HuggingFaceEmbeddings = None  # type: ignore[assignment]
+    HuggingFaceEmbeddings = None  # type: ignore
+    FAISS = None  # type: ignore
 
-logger = logging.getLogger(__name__)
-
-# Must match the embedding model used during ingest_knowledge
-EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+NAMA_MODEL_EMBEDDING = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+JUMLAH_DOKUMEN_RETRIEVAL = 4
 
 
 class RAGRetriever:
-    """Retrieves relevant clinical knowledge from a FAISS vector store.
+    def __init__(self, index_dir: str):
+        self._index_dir = Path(index_dir)
+        self._index: FAISS | None = None
+        self._embeddings = None
 
-    The FAISS index must be pre-built by KnowledgeIngest before retrieval.
-    """
-
-    def __init__(
-        self,
-        index_path: str | Path = "faiss_index",
-        embedding_model: str = EMBEDDING_MODEL_NAME,
-        top_k: int = 4,
-    ) -> None:
-        """Initialize the retriever.
-
-        Args:
-            index_path: Path to the saved FAISS index directory.
-            embedding_model: HuggingFace model name for embeddings.
-            top_k: Number of top documents to retrieve.
-        """
-        self.index_path = Path(index_path)
-        self.embedding_model = embedding_model
-        self.top_k = top_k
-
-    def _load_faiss_index(self):
-        """Load the FAISS index from disk.
-
-        Returns:
-            Loaded FAISS vector store object.
-
-        Raises:
-            FileNotFoundError: If the FAISS index directory is missing or empty.
-        """
-        if not self.index_path.exists() or not any(self.index_path.iterdir()):
-            raise FileNotFoundError(
-                f"FAISS index tidak ditemukan di: {self.index_path}. "
-                f"Jalankan ingest_knowledge.py terlebih dahulu."
-            )
-
-        model = HuggingFaceEmbeddings(
-            model_name=self.embedding_model,
+    def _init_embeddings(self):
+        if HuggingFaceEmbeddings is None:
+            raise ImportError("langchain-huggingface not installed")
+        self._embeddings = HuggingFaceEmbeddings(
+            model_name=NAMA_MODEL_EMBEDDING,
             model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
 
-        return FAISS.load_local(
-            folder_path=str(self.index_path),
-            embeddings=model,
+    def load_index(self):
+        if not self._index_dir.exists() or not any(self._index_dir.iterdir()):
+            raise FileNotFoundError(
+                f"Index FAISS tidak ditemukan di: {self._index_dir}\n"
+                f"Jalankan ingest_knowledge terlebih dahulu."
+            )
+        if FAISS is None:
+            raise ImportError("langchain-community not installed")
+        self._init_embeddings()
+        self._index = FAISS.load_local(
+            folder_path=str(self._index_dir),
+            embeddings=self._embeddings,
             allow_dangerous_deserialization=True,
         )
 
-    def retrieve(self, query: str, k: int | None = None) -> str:
-        """Search the knowledge base for documents relevant to the query.
-
-        Args:
-            query: The query text (typically the verbatim narrative).
-            k: Number of documents to retrieve (defaults to self.top_k).
-
-        Returns:
-            Combined context string from top-k retrieved documents.
-        """
-        num_docs = k if k is not None else self.top_k
-
-        try:
-            index = self._load_faiss_index()
-            docs = index.similarity_search(query=query, k=num_docs)
-
-            if not docs:
-                return "(Tidak ada konteks referensi tambahan yang ditemukan.)"
-
-            chunks = []
-            for i, doc in enumerate(docs, start=1):
-                source = doc.metadata.get("source", "sumber tidak diketahui")
-                src_name = Path(source).name if source != "sumber tidak diketahui" else source
-                chunks.append(f"[Referensi {i} - sumber: {src_name}]\n{doc.page_content}")
-
-            return "\n\n".join(chunks)
-        except FileNotFoundError:
-            raise
-        except Exception as e:
-            logger.warning(f"Retrieval failed: {e}; returning empty context")
+    def retrieve(self, query: str, top_k: int = JUMLAH_DOKUMEN_RETRIEVAL) -> str:
+        if self._index is None:
+            self.load_index()
+        hasil = self._index.similarity_search(query=query, k=top_k)
+        if not hasil:
             return "(Tidak ada konteks referensi tambahan yang ditemukan.)"
+        potongan = []
+        for nomor, doc in enumerate(hasil, start=1):
+            sumber = doc.metadata.get("source", "sumber tidak diketahui")
+            potongan.append(
+                f"[Referensi {nomor} - sumber: {Path(sumber).name}]\n{doc.page_content}"
+            )
+        return "\n\n".join(potongan)

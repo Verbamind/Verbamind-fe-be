@@ -1,3 +1,4 @@
+# Core
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 sqlalchemy[asyncio]>=2.0.0
@@ -7,9 +8,26 @@ pydantic-settings>=2.0.0
 PySide6>=6.7.0
 pycryptodome>=3.20.0
 pywin32>=306
-openai-whisper>=20231117
-torch>=2.3.0
-transformers>=4.43.0
-llama-cpp-python>=0.2.90
 httpx>=0.27.0
 alembic>=1.13.0
+
+# AI / STT
+openai-whisper>=20231117
+torch>=2.3.0
+
+# RAG + LLM (Verbamind_RAG)
+langchain>=0.3.7
+langchain-community>=0.3.7
+langchain-ollama>=0.2.0
+langchain-huggingface>=0.1.2
+langchain-text-splitters>=0.3.2
+sentence-transformers>=3.3.0
+faiss-cpu>=1.9.0
+pymupdf>=1.24.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+pytest-qt>=4.3.0
+ruff>=0.1.0

@@ -1,141 +1,97 @@
-"""BIRP Generator — orchestrates RAG retrieval + LLM generation.
+"""BIRP Generator — orchestrates RAG + LLM pipeline.
 
-Combines:
-1. Verbatim parsing (transcript → narrative)
-2. RAG retrieval (narrative → clinical context)
-3. LLM generation (prompt + context → BIRP JSON)
-
-Adapted from Verbamind_RAG's main_rag.py pipeline.
+Adapted from Verbamind_RAG src/main_rag.py — full pipeline: verbatim → RAG → LLM → BIRP JSON.
 """
 
-from __future__ import annotations
-
+import json
 import logging
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
-# Import at module level for mock patching in tests
-from verbamind.backend.ai_pipeline.llm import LLMWrapper  # noqa: F401
-from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever  # noqa: F401
-
+from verbamind.backend.ai_pipeline.llm import LLMWrapper
 from verbamind.backend.ai_pipeline.prompts.birp_prompt import (
     BIRP_REQUIRED_KEYS,
-    build_system_prompt,
+    SYSTEM_PROMPT_TEMPLATE,
     validate_birp_output,
 )
+from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
 from verbamind.backend.ai_pipeline.rag.verbatim_parser import (
-    merge_transkrip_to_narrative,
+    gabungkan_transkrip_menjadi_narasi,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class BIRPGenerator:
-    """Generates BIRP clinical notes from merged verbatim transcripts.
-
-    Orchestrates: verbatim → narrative → RAG retrieval → LLM → BIRP JSON.
-    """
-
     def __init__(
         self,
-        llm_wrapper=None,
-        retriever=None,
-    ) -> None:
-        """Initialize the BIRP generator.
-
-        Args:
-            llm_wrapper: LLMWrapper instance (created lazily if None).
-            retriever: RAGRetriever instance (created lazily if None).
-        """
-        self._llm = llm_wrapper
+        retriever: RAGRetriever,
+        llm: LLMWrapper,
+        output_dir: str = "output_hasil",
+    ):
         self._retriever = retriever
-
-    @property
-    def llm(self):
-        """Lazy-init LLM wrapper."""
-        if self._llm is None:
-            self._llm = LLMWrapper()
-        return self._llm
-
-    @property
-    def retriever(self):
-        """Lazy-init RAG retriever."""
-        if self._retriever is None:
-            self._retriever = RAGRetriever()
-        return self._retriever
-
-    def _verbatim_to_text(
-        self,
-        merged_verbatim: list[dict[str, Any]],
-    ) -> str:
-        """Convert merged verbatim segments to narrative text.
-
-        Args:
-            merged_verbatim: List of merged segments with speaker, text, emotion.
-
-        Returns:
-            Narrative text string.
-        """
-        adapted = {
-            "id_sesi": "unknown",
-            "transkrip": [
-                {
-                    "speaker": seg.get("speaker", "unknown").capitalize(),
-                    "teks": seg.get("text", ""),
-                    "emosi": seg.get("emotion", ""),
-                }
-                for seg in merged_verbatim
-            ],
-        }
-        return merge_transkrip_to_narrative(adapted, include_speaker=True, include_emotion=True)
+        self._llm = llm
+        self._output_dir = Path(output_dir)
 
     def generate(
         self,
-        merged_verbatim: list[dict[str, Any]],
-    ) -> dict[str, str]:
-        """Generate BIRP clinical notes from merged verbatim.
+        verbatim_data: dict[str, Any],
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Jalankan pipeline lengkap: verbatim → narasi → RAG → LLM → BIRP."""
+        sid = session_id or verbatim_data.get("id_sesi", "SESI-TIDAK-DIKETAHUI")
 
-        Full pipeline:
-        1. Convert merged verbatim to narrative text
-        2. Retrieve relevant clinical context via RAG
-        3. Build system prompt with context + transcript
-        4. Call LLM for BIRP JSON generation
-        5. Validate and fill missing BIRP keys
+        # Tahap 1: Gabungkan transkrip menjadi narasi
+        narasi = gabungkan_transkrip_menjadi_narasi(
+            verbatim_data,
+            sertakan_nama_speaker=True,
+            sertakan_label_emosi=True,
+        )
+        logger.info(f"Narasi transkrip: {len(narasi)} karakter")
 
-        Args:
-            merged_verbatim: List of enriched transcript segments
-                (output of merge_service.MergeService.merge()).
-
-        Returns:
-            Dictionary with keys: behavior, intervention, response, plan.
-
-        Raises:
-            ValueError: If merged_verbatim is empty.
-        """
-        if not merged_verbatim:
-            raise ValueError("merged_verbatim tidak boleh kosong.")
-
-        # Step 1: Convert to narrative
-        narrative = self._verbatim_to_text(merged_verbatim)
-        logger.info(f"Generated narrative ({len(narrative)} chars)")
-
-        # Step 2: RAG retrieval
+        # Tahap 2: Retrieval dari FAISS
         try:
-            context = self.retriever.retrieve(narrative)
-            logger.info(f"Retrieved context ({len(context)} chars)")
-        except Exception as e:
-            logger.warning(f"RAG retrieval failed: {e}; proceeding without context")
-            context = "(Tidak ada konteks referensi tambahan yang ditemukan.)"
+            konteks = self._retriever.retrieve(narasi)
+        except FileNotFoundError:
+            logger.warning("Index FAISS tidak ditemukan, melanjutkan tanpa RAG")
+            konteks = "(Tidak ada konteks referensi tambahan yang ditemukan.)"
 
-        # Step 3: Build prompt
-        prompt = build_system_prompt(context=context, transcript=narrative)
+        # Tahap 3: Panggil LLM
+        prompt = SYSTEM_PROMPT_TEMPLATE.format(
+            konteks_referensi=konteks,
+            narasi_transkrip=narasi,
+        )
+        logger.info("Mengirim prompt ke LLM...")
+        response_raw = self._llm.generate(prompt)
+        birp = self._parse_response(response_raw)
+        birp = validate_birp_output(birp)
 
-        # Step 4: Call LLM
-        try:
-            result = self.llm.generate_json(prompt)
-        except Exception as e:
-            logger.error(f"LLM generation failed: {e}")
-            result = {}
+        # Tahap 4: Simpan hasil
+        self._save(sid, birp)
 
-        # Step 5: Validate output
-        birp = validate_birp_output(result)
         return birp
+
+    def _parse_response(self, raw: str) -> dict:
+        if isinstance(raw, dict):
+            return raw
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            logger.error(f"Gagal parsing JSON: {raw[:200]}...")
+            return {k: "" for k in BIRP_REQUIRED_KEYS}
+
+    def _save(self, session_id: str, birp: dict) -> Path:
+        self._output_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        name = f"BIRP_{session_id}_{ts}.json"
+        path = self._output_dir / name
+        output = {
+            "id_sesi": session_id,
+            "waktu_analisis": datetime.now().isoformat(),
+            "model_llm": "qwen2.5:7b-instruct",
+            "catatan_klinis_birp": birp,
+        }
+        path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        logger.info(f"BIRP disimpan di: {path}")
+        return path

@@ -1,62 +1,54 @@
-"""BIRP generation API router — Qwen2.5 + RAG clinical note generation.
+"""BIRP API — generate clinical notes via RAG + Qwen2.5."""
 
-Endpoints:
-- POST /api/v1/birp/generate — Generate BIRP notes from merged verbatim (with RAG)
-"""
-
-from __future__ import annotations
-
-import logging
-from typing import Any
-
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-
-from verbamind.backend.ai_pipeline.birp_generator import BIRPGenerator
-
-logger = logging.getLogger(__name__)
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/api/v1/birp")
 
 
-class BIRPRequest(BaseModel):
-    """Request schema for BIRP generation."""
+@router.post("/generate")
+async def generate_birp(request: dict):
+    """Generate BIRP from verbatim transcript.
 
-    session_id: str = Field(..., description="ID sesi konseling")
-    merged_verbatim: list[dict[str, Any]] = Field(
-        ...,
-        description="List of merged transcript segments with speaker, text, start, end, emotion",
-        min_length=1,
-    )
-
-
-class BIRPResponse(BaseModel):
-    """Response schema for generated BIRP notes."""
-
-    success: bool
-    birp: dict[str, str] | None = None
-    error: str | None = None
-
-
-@router.post("/generate", response_model=BIRPResponse)
-async def generate_birp(request: BIRPRequest) -> dict[str, Any]:
-    """Generate BIRP clinical notes from merged verbatim transcript.
-
-    Pipeline: verbatim → narrative → RAG retrieval → LLM → BIRP JSON.
-    Uses Qwen2.5:7B-Instruct via Ollama with FAISS-based clinical knowledge retrieval.
-
-    Args:
-        request: BIRPRequest with session_id and merged_verbatim segments.
-
-    Returns:
-        BIRPResponse with behavior, intervention, response, plan keys.
+    Input: {
+        "session_id": str,
+        "verbatim_segments": [{"speaker": str, "text": str, "start": float, "end": float, "emotion": str|null}]
+    }
     """
     try:
-        generator = BIRPGenerator()
-        birp = generator.generate(request.merged_verbatim)
-        return {"success": True, "birp": birp, "error": None}
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        segments = request.get("verbatim_segments", [])
+        session_id = request.get("session_id", "SESI-TIDAK-DIKETAHUI")
+
+        transkrip = []
+        for s in segments:
+            transkrip.append({
+                "speaker": s.get("speaker", "Tidak diketahui"),
+                "teks": s.get("text", ""),
+                "emosi": s.get("emotion", ""),
+            })
+
+        verbatim_data = {"id_sesi": session_id, "transkrip": transkrip}
+
+        try:
+            from verbamind.backend.ai_pipeline.birp_generator import BIRPGenerator
+            from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
+            from verbamind.backend.ai_pipeline.llm import LLMWrapper
+
+            retriever = RAGRetriever(index_dir="faiss_index")
+            llm = LLMWrapper()
+            generator = BIRPGenerator(retriever=retriever, llm=llm)
+            birp = generator.generate(verbatim_data=verbatim_data, session_id=session_id)
+            return {"status": "ok", "data": birp}
+        except FileNotFoundError as e:
+            return {
+                "status": "partial",
+                "message": f"FAISS index not found. Run ingest_knowledge first. {e}",
+                "data": None,
+            }
+        except ImportError as e:
+            return {
+                "status": "unavailable",
+                "message": f"RAG dependencies not installed: {e}",
+                "data": None,
+            }
     except Exception as e:
-        logger.exception("BIRP generation failed")
-        raise HTTPException(status_code=500, detail=f"BIRP generation failed: {e}")
+        return {"status": "error", "message": str(e), "data": None}

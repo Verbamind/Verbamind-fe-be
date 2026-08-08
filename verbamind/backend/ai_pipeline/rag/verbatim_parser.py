@@ -1,93 +1,57 @@
-"""Verbatim transcript parser — adapted from Verbamind_RAG's json_parser.py.
-
-Parses verbatim.json (STT output) into narrative text for RAG retrieval
-and LLM BIRP generation.
-
-Source: https://github.com/Verbamind/Verbamind_RAG
-"""
-
-from __future__ import annotations
+# ==============================================================================
+# verbatim_parser.py — adapted from Verbamind_RAG src/utils/json_parser.py
+# ==============================================================================
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 
 
-def load_verbatim_file(filepath: str | Path) -> dict[str, Any]:
-    """Read a verbatim.json file and return parsed dictionary.
-
-    Args:
-        filepath: Path to the verbatim.json file.
-
-    Returns:
-        Dictionary with keys: 'id_sesi', 'transkrip' (list of segments).
-
-    Raises:
-        FileNotFoundError: If the file does not exist at the given path.
-    """
-    path = Path(filepath)
-    if not path.exists():
+def muat_file_verbatim(path_file_json: str) -> Dict[str, Any]:
+    path_obj = Path(path_file_json)
+    if not path_obj.exists():
         raise FileNotFoundError(
-            f"File verbatim tidak ditemukan: {filepath}. "
-            f"Pastikan file hasil Speech-to-Text sudah tersedia."
+            f"File verbatim tidak ditemukan pada path: {path_file_json}. "
+            f"Pastikan file hasil Speech-to-Text sudah tersedia sebelum "
+            f"menjalankan pipeline RAG."
         )
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    with open(path_obj, "r", encoding="utf-8") as file_handle:
+        data_json = json.load(file_handle)
+    return data_json
 
 
-def merge_transkrip_to_narrative(
-    verbatim_data: dict[str, Any],
-    include_speaker: bool = True,
-    include_emotion: bool = False,
+def gabungkan_transkrip_menjadi_narasi(
+    data_verbatim: Dict[str, Any],
+    sertakan_nama_speaker: bool = True,
+    sertakan_label_emosi: bool = False,
 ) -> str:
-    """Combine transcript segments into a single narrative paragraph.
-
-    Args:
-        verbatim_data: Dictionary from load_verbatim_file().
-        include_speaker: Prefix each line with speaker name (e.g., "Psikolog: ...").
-        include_emotion: Include emotion labels in parentheses.
-
-    Returns:
-        Single narrative string with lines joined by newlines.
-
-    Raises:
-        ValueError: If 'transkrip' field is empty or missing.
-    """
-    segments: list[dict[str, str]] = verbatim_data.get("transkrip", [])
-
-    if not segments:
+    daftar_transkrip: List[Dict[str, str]] = data_verbatim.get("transkrip", [])
+    if not daftar_transkrip:
         raise ValueError(
-            "Field 'transkrip' pada file verbatim kosong atau tidak ditemukan."
+            "Field 'transkrip' pada file verbatim.json kosong atau tidak "
+            "ditemukan. Periksa kembali format file input Anda."
         )
-
-    lines: list[str] = []
-    for seg in segments:
-        text = seg.get("teks", "").strip()
-        speaker = seg.get("speaker", "Tidak diketahui")
-        emotion = seg.get("emosi", "")
-
-        if not text:
+    baris_narasi: List[str] = []
+    for baris in daftar_transkrip:
+        teks_ucapan = baris.get("teks", "").strip()
+        nama_speaker = baris.get("speaker", "Tidak diketahui")
+        label_emosi = baris.get("emosi", "")
+        if not teks_ucapan:
             continue
-
         prefix = ""
-        if include_speaker:
-            if include_emotion and emotion:
-                prefix = f"{speaker} ({emotion}): "
+        if sertakan_nama_speaker:
+            if sertakan_label_emosi and label_emosi:
+                prefix = f"{nama_speaker} ({label_emosi}): "
             else:
-                prefix = f"{speaker}: "
-
-        lines.append(f"{prefix}{text}")
-
-    return "\n".join(lines)
+                prefix = f"{nama_speaker}: "
+        baris_narasi.append(f"{prefix}{teks_ucapan}")
+    return "\n".join(baris_narasi)
 
 
-def extract_session_id(verbatim_data: dict[str, Any]) -> str:
-    """Extract session ID from verbatim data.
+def ekstrak_id_sesi(data_verbatim: Dict[str, Any]) -> str:
+    return data_verbatim.get("id_sesi", "SESI-TIDAK-DIKETAHUI")
 
-    Args:
-        verbatim_data: Dictionary from load_verbatim_file().
 
-    Returns:
-        Session ID string, or 'SESI-TIDAK-DIKETAHUI' if missing.
-    """
-    return verbatim_data.get("id_sesi", "SESI-TIDAK-DIKETAHUI")
+# Aliases for backward compatibility with TDD tests
+load_verbatim_file = muat_file_verbatim
+merge_transkrip_to_narrative = gabungkan_transkrip_menjadi_narasi

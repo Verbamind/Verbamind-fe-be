@@ -1,157 +1,106 @@
-"""Knowledge ingest — builds FAISS vector store from clinical knowledge base.
+# ==============================================================================
+# knowledge_ingest.py — adapted from Verbamind_RAG src/ingest_knowledge.py
+#
+# Build FAISS vector index from clinical knowledge base (.txt + .pdf).
+# Uses paraphrase-multilingual-MiniLM-L12-v2 (optimized for Bahasa Indonesia).
+# ==============================================================================
 
-Adapted from Verbamind_RAG's ingest_knowledge.py.
-Reads .txt files, chunks, embeds, and saves FAISS index.
-
-Provides the top-level `ingest_knowledge_base()` function.
-"""
-
-from __future__ import annotations
-
-import logging
+import sys
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+DIREKTORI_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+DIREKTORI_KNOWLEDGE_BASE = DIREKTORI_ROOT / "data" / "knowledge_base"
+DIREKTORI_FAISS_INDEX = DIREKTORI_ROOT / "faiss_index"
 
-# Must match the embedding model used by RAGRetriever
-EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-
-# Chunking configuration
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 100
-
-# Lazy import — declared at module level so tests can mock them.
-# All are None until _check_dependencies() confirms they're available.
-TextLoader = None  # type: ignore[assignment]
-FAISS = None  # type: ignore[assignment]
-HuggingFaceEmbeddings = None  # type: ignore[assignment]
-RecursiveCharacterTextSplitter = None  # type: ignore[assignment]
+NAMA_MODEL_EMBEDDING = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+UKURAN_CHUNK = 500
+TUMPANG_TINDIH_CHUNK = 100
 
 
-def _check_dependencies():
-    """Verify and set up langchain dependencies.
-
-    Sets module-level globals: TextLoader, FAISS, HuggingFaceEmbeddings,
-    RecursiveCharacterTextSplitter.
-
-    Raises:
-        ImportError: If required packages are missing.
-    """
-    global TextLoader, FAISS, HuggingFaceEmbeddings, RecursiveCharacterTextSplitter
-    try:
-        from langchain_community.document_loaders import TextLoader as TL
-        from langchain_community.vectorstores import FAISS as FS
-        from langchain_huggingface import HuggingFaceEmbeddings as HFE
-        from langchain_text_splitters import RecursiveCharacterTextSplitter as RCTS
-
-        TextLoader = TL
-        FAISS = FS
-        HuggingFaceEmbeddings = HFE
-        RecursiveCharacterTextSplitter = RCTS
-    except ImportError as e:
-        raise ImportError(
-            f"RAG dependencies not installed: {e}. "
-            f"Install with: pip install langchain langchain-community "
-            f"langchain-huggingface langchain-text-splitters faiss-cpu sentence-transformers"
-        ) from e
+def validasi_folder() -> None:
+    if not DIREKTORI_KNOWLEDGE_BASE.exists():
+        print(f"[ERROR] Folder tidak ditemukan: {DIREKTORI_KNOWLEDGE_BASE}")
+        sys.exit(1)
+    txt = list(DIREKTORI_KNOWLEDGE_BASE.glob("*.txt"))
+    pdf = list(DIREKTORI_KNOWLEDGE_BASE.glob("*.pdf"))
+    total = len(txt) + len(pdf)
+    if total == 0:
+        print(f"[ERROR] Tidak ada file .txt/.pdf di: {DIREKTORI_KNOWLEDGE_BASE}")
+        sys.exit(1)
+    print(f"[INFO] {len(txt)} TXT + {len(pdf)} PDF ditemukan.")
 
 
-def _validate_knowledge_base(kb_dir: Path) -> list[Path]:
-    """Validate knowledge base directory and return .txt files.
+def muat_semua_dokumen() -> list:
+    from langchain_community.document_loaders import DirectoryLoader, TextLoader, PyMuPDFLoader
 
-    Args:
-        kb_dir: Path to the knowledge base directory.
+    dokumen = []
 
-    Returns:
-        List of .txt file paths.
+    # Load TXT
+    loader = DirectoryLoader(
+        path=str(DIREKTORI_KNOWLEDGE_BASE),
+        glob="*.txt",
+        loader_cls=TextLoader,
+        loader_kwargs={"encoding": "utf-8"},
+        show_progress=False,
+    )
+    dokumen = loader.load()
+    print(f"[INFO] {len(dokumen)} dokumen dari .txt")
 
-    Raises:
-        FileNotFoundError: If directory doesn't exist.
-        ValueError: If no .txt files found.
-    """
-    if not kb_dir.exists():
-        raise FileNotFoundError(
-            f"Folder knowledge base tidak ditemukan: {kb_dir}"
-        )
+    # Load PDF
+    for pdf_file in DIREKTORI_KNOWLEDGE_BASE.glob("*.pdf"):
+        try:
+            loader_pdf = PyMuPDFLoader(str(pdf_file))
+            halaman = loader_pdf.load()
+            dokumen.extend(halaman)
+            print(f"[INFO] {pdf_file.name}: {len(halaman)} halaman")
+        except Exception as e:
+            print(f"[WARNING] Gagal baca {pdf_file.name}: {e}")
 
-    txt_files = [f for f in kb_dir.glob("*.txt")]
-    if not txt_files:
-        raise ValueError(
-            f"Tidak ditemukan file .txt di dalam {kb_dir}. "
-            f"Tambahkan minimal satu file .txt berisi materi kode etik/teori psikologi."
-        )
-
-    return txt_files
+    return dokumen
 
 
-def ingest_knowledge_base(
-    knowledge_base_path: str = "data/knowledge_base",
-    index_output_path: str = "faiss_index",
-    embedding_model: str = EMBEDDING_MODEL_NAME,
-    chunk_size: int = CHUNK_SIZE,
-    chunk_overlap: int = CHUNK_OVERLAP,
-) -> int:
-    """Build FAISS index from knowledge base .txt files.
+def pecah_chunk(dokumen: list) -> list:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-    Reads all .txt files from the knowledge base directory, splits into
-    overlapping chunks, generates embeddings, and saves a FAISS index.
-
-    Args:
-        knowledge_base_path: Directory containing .txt knowledge files.
-        index_output_path: Directory where FAISS index is saved.
-        embedding_model: HuggingFace model name for embeddings.
-        chunk_size: Maximum characters per text chunk.
-        chunk_overlap: Overlap between adjacent chunks.
-
-    Returns:
-        Number of chunks created in the FAISS index.
-
-    Raises:
-        FileNotFoundError: If knowledge_base_path doesn't exist.
-        ValueError: If no .txt files found in the directory.
-        ImportError: If langchain dependencies are not installed.
-    """
-    kb_dir = Path(knowledge_base_path)
-    faiss_dir = Path(index_output_path)
-
-    # Validate FIRST (before importing heavy langchain deps)
-    txt_files = _validate_knowledge_base(kb_dir)
-
-    # Check deps and import langchain (inside function for lazy loading)
-    _check_dependencies()
-
-    # Using module-level globals set by _check_dependencies()
-
-    # Load documents
-    documents = []
-    for filepath in txt_files:
-        loader = TextLoader(str(filepath), encoding="utf-8")
-        documents.extend(loader.load())
-
-    # Split into chunks
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
+        chunk_size=UKURAN_CHUNK,
+        chunk_overlap=TUMPANG_TINDIH_CHUNK,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
-    chunks = splitter.split_documents(documents)
+    chunk = splitter.split_documents(dokumen)
+    print(f"[INFO] {len(chunk)} chunk dihasilkan.")
+    return chunk
 
-    if not chunks:
-        logger.warning("No chunks generated from documents")
-        return 0
 
-    # Build embeddings and FAISS index
-    model = HuggingFaceEmbeddings(
-        model_name=embedding_model,
+def bangun_faiss(chunk: list) -> None:
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_community.vectorstores import FAISS
+
+    print(f"[INFO] Memuat model: {NAMA_MODEL_EMBEDDING}...")
+    emb = HuggingFaceEmbeddings(
+        model_name=NAMA_MODEL_EMBEDDING,
         model_kwargs={"device": "cpu"},
         encode_kwargs={"normalize_embeddings": True},
     )
+    print("[INFO] Membangun index FAISS...")
+    index = FAISS.from_documents(chunk, emb)
+    DIREKTORI_FAISS_INDEX.mkdir(parents=True, exist_ok=True)
+    index.save_local(str(DIREKTORI_FAISS_INDEX))
+    print(f"[SUKSES] FAISS index tersimpan di: {DIREKTORI_FAISS_INDEX}")
 
-    index = FAISS.from_documents(documents=chunks, embedding=model)
 
-    # Save
-    faiss_dir.mkdir(parents=True, exist_ok=True)
-    index.save_local(str(faiss_dir))
-    logger.info(f"FAISS index saved to {faiss_dir} with {len(chunks)} chunks")
+def main():
+    print("=" * 60)
+    print("VERBAMIND — INGESTION KNOWLEDGE BASE → FAISS")
+    print("=" * 60)
+    validasi_folder()
+    dok = muat_semua_dokumen()
+    if not dok:
+        print("[ERROR] Tidak ada dokumen yang berhasil dimuat.")
+        sys.exit(1)
+    chunk = pecah_chunk(dok)
+    bangun_faiss(chunk)
 
-    return len(chunks)
+
+if __name__ == "__main__":
+    main()

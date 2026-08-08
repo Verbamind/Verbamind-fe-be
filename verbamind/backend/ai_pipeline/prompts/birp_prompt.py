@@ -1,7 +1,6 @@
-"""BIRP prompt templates — adapted from Verbamind_RAG's SYSTEM_PROMPT.
+"""BIRP prompt — SYSTEM_PROMPT_TEMPLATE from Verbamind_RAG src/main_rag.py.
 
-Provides the system prompt, context formatting, and JSON output schema
-for Qwen2.5:7B-Instruct BIRP generation.
+Paksa LLM menghasilkan JSON murni format BIRP dalam Bahasa Indonesia.
 """
 
 SYSTEM_PROMPT_TEMPLATE = """Anda adalah asisten klinis AI bernama Verbamind yang membantu psikolog \
@@ -33,12 +32,12 @@ BUKAN diagnosis final. Jangan mengeluarkan pernyataan diagnosis definitif.
 
 KONTEKS REFERENSI KLINIS (hasil retrieval dari basis pengetahuan lokal):
 ----------------------------------------------------------------------
-{context}
+{konteks_referensi}
 ----------------------------------------------------------------------
 
 NARASI TRANSKRIP SESI (hasil Speech-to-Text):
 ----------------------------------------------------------------------
-{transcript}
+{narasi_transkrip}
 ----------------------------------------------------------------------
 
 Sekarang, hasilkan catatan klinis format BIRP dalam bentuk JSON murni sesuai aturan di atas.
@@ -47,30 +46,11 @@ Sekarang, hasilkan catatan klinis format BIRP dalam bentuk JSON murni sesuai atu
 BIRP_REQUIRED_KEYS = ["behavior", "intervention", "response", "plan"]
 
 
-def build_system_prompt(context: str = "", transcript: str = "") -> str:
-    """Build the full system prompt with context and transcript.
-
-    Args:
-        context: Clinical reference context from RAG retrieval.
-        transcript: Merged verbatim narrative text.
-
-    Returns:
-        Formatted system prompt string ready for LLM invocation.
-    """
-    ctx = context if context else "(Tidak ada konteks referensi klinis tersedia.)"
-    txt = transcript if transcript else "(Tidak ada narasi transkrip yang tersedia.)"
-    return SYSTEM_PROMPT_TEMPLATE.format(context=ctx, transcript=txt)
+def build_system_prompt() -> str:
+    return SYSTEM_PROMPT_TEMPLATE
 
 
 def validate_birp_output(data: dict) -> dict:
-    """Validate and fill missing keys in BIRP output.
-
-    Args:
-        data: Dictionary from parsed LLM JSON output.
-
-    Returns:
-        Dictionary with all four BIRP keys guaranteed present.
-    """
     for key in BIRP_REQUIRED_KEYS:
         if key not in data:
             data[key] = ""
