@@ -275,11 +275,11 @@ QPushButton#small_btn {
 QLineEdit {
     border: 1px solid #b1b1b1;
     background: #ffffff;
-    padding: 6px 8px;
+    padding: 8px 10px;
     font-size: 12.5px;
     color: #1a1a1a;
     border-radius: 2px;
-    min-height: 20px;
+    min-height: 24px;
 }
 QLineEdit:focus {
     border-color: #0a5fc4;
