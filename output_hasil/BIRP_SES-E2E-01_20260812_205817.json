@@ -1,0 +1,11 @@
+{
+  "id_sesi": "SES-E2E-01",
+  "waktu_analisis": "2026-08-12T20:58:17.569612",
+  "model_llm": "qwen2.5:7b-instruct",
+  "catatan_klinis_birp": {
+    "behavior": "Pasien menunjukkan kecemasan.",
+    "intervention": "Psikolog melakukan grounding technique.",
+    "response": "Pasien merasa lebih tenang.",
+    "plan": "Lanjutkan sesi minggu depan."
+  }
+}
