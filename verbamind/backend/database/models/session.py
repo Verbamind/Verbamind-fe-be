@@ -22,7 +22,7 @@ class Session(Base):
     patient = relationship("Patient", back_populates="sessions")
     psychologist = relationship("Psychologist", back_populates="sessions")
     transcripts = relationship("Transcript", back_populates="session", cascade="all, delete-orphan")
-    ser_results = relationship("SERResult", back_populates="session", cascade="all, delete-orphan")
+    nonverbal_results = relationship("NonverbalResult", back_populates="session", cascade="all, delete-orphan")
     birp_result = relationship("BIRPResult", back_populates="session", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self) -> str:

@@ -1,7 +1,7 @@
-"""Merged Verbatim engine — combines verbal (STT) and non-verbal (SER) data.
+"""Merged Verbatim engine — combines verbal (STT) and non-verbal data.
 
 Produces enriched transcript segments with speaker labels, text, timestamps,
-and emotional annotations. Output ready for LLM BIRP generation.
+and nonverbal annotations. Output ready for LLM BIRP generation.
 """
 
 from typing import Any
@@ -16,35 +16,34 @@ class MergeService:
         sorted_verbal = sorted(verbal, key=lambda s: s.get("start", 0.0))
         merged = []
         for seg in sorted_verbal:
-            best_emotion = self._best_emotion_for_segment(seg, non_verbal)
+            best_nv = self._best_nonverbal_for_segment(seg, non_verbal)
             merged.append({
                 "speaker": seg.get("speaker", "unknown"),
                 "text": seg.get("text", ""),
                 "start": seg.get("start", 0.0),
                 "end": seg.get("end", 0.0),
-                "emotion": best_emotion["emotion"] if best_emotion else None,
-                "emotion_confidence": best_emotion["confidence"] if best_emotion else None,
+                "emotion": best_nv["emotion"] if best_nv else None,
+                "emotion_confidence": best_nv["confidence"] if best_nv else None,
             })
         return merged
 
-    def _best_emotion_for_segment(
+    def _best_nonverbal_for_segment(
         self,
         segment: dict[str, Any],
-        ser_results: list[dict[str, Any]],
+        nonverbal_results: list[dict[str, Any]],
     ) -> dict[str, Any] | None:
         seg_start = segment.get("start", 0.0)
         seg_end = segment.get("end", 0.0)
-        seg_mid = (seg_start + seg_end) / 2
 
         best = None
         best_conf = -1.0
-        for ser in ser_results:
-            s_start = ser.get("segment_start", 0.0)
-            s_end = ser.get("segment_end", 0.0)
+        for nv in nonverbal_results:
+            s_start = nv.get("segment_start", 0.0)
+            s_end = nv.get("segment_end", 0.0)
             if s_end > seg_start and s_start < seg_end:
-                if ser.get("confidence", 0.0) > best_conf:
-                    best = ser
-                    best_conf = ser.get("confidence", 0.0)
+                if nv.get("confidence", 0.0) > best_conf:
+                    best = nv
+                    best_conf = nv.get("confidence", 0.0)
         return best if best else None
 
     def to_verbatim_text(self, merged: list[dict[str, Any]]) -> str:

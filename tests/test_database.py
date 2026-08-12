@@ -163,11 +163,11 @@ class TestTranscriptModel:
         assert transcript.speaker == "patient"
 
 
-class TestSERResultModel:
-    async def test_create_ser_result(self, session: AsyncSession):
+class TestNonverbalResultModel:
+    async def test_create_nonverbal_result(self, session: AsyncSession):
+        from verbamind.backend.database.models.nonverbal_result import NonverbalResult
         from verbamind.backend.database.models.patient import Patient
         from verbamind.backend.database.models.psychologist import Psychologist
-        from verbamind.backend.database.models.ser_result import SERResult
         from verbamind.backend.database.models.session import Session
 
         patient = Patient(name="P4", age=40, gender="female")
@@ -183,20 +183,26 @@ class TestSERResultModel:
         session.add(ses)
         await session.flush()
 
-        ser = SERResult(
+        nv = NonverbalResult(
             session_id=ses.id,
-            emotion="anxious",
-            confidence=0.87,
-            segment_start=0.0,
-            segment_end=3.5,
+            frame=10,
+            timestamp=0.25,
+            current_loudness=-30.5,
+            baseline_loudness=-32.0,
+            delta_loudness=1.5,
+            loudness_category="No Significant Change",
+            current_pitch=120.0,
+            baseline_pitch=118.0,
+            delta_pitch=2.0,
+            pitch_category="No Significant Change",
         )
-        session.add(ser)
+        session.add(nv)
         await session.commit()
-        await session.refresh(ser)
+        await session.refresh(nv)
 
-        assert ser.id is not None
-        assert ser.emotion == "anxious"
-        assert 0 <= ser.confidence <= 1
+        assert nv.id is not None
+        assert nv.loudness_category == "No Significant Change"
+        assert nv.frame == 10
 
 
 class TestBIRPResultModel:
@@ -294,7 +300,7 @@ class TestAllTablesExist:
             "psychologists",
             "sessions",
             "transcripts",
-            "ser_results",
+            "nonverbal_results",
             "birp_results",
             "audit_logs",
         ]

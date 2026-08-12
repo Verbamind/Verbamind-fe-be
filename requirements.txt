@@ -15,6 +15,12 @@ alembic>=1.13.0
 openai-whisper>=20231117
 torch>=2.3.0
 
+# SER (nonverbal cue detection)
+librosa>=0.10.0
+scikit-fuzzy>=0.5.0
+scipy>=1.11.0
+pandas>=2.0.0
+
 # RAG + LLM (Verbamind_RAG)
 langchain>=0.3.7
 langchain-community>=0.3.7

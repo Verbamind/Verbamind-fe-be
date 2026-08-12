@@ -27,9 +27,9 @@ from verbamind.backend.database.connection import get_engine, get_session_factor
 from verbamind.backend.database.models import (  # noqa: E402
     AuditLog,
     BIRPResult,
+    NonverbalResult,
     Patient,
     Psychologist,
-    SERResult,
     Session,
     Transcript,
 )
@@ -66,18 +66,25 @@ async def main():
         await session.flush()
         print(f"[3/5] Created: Session(id={ses.id}, status={ses.status}) ✓")
 
-        # 4. Create transcript + SER + BIRP
+        # 4. Create transcript + NonverbalResult + BIRP
         transcript = Transcript(
             session_id=ses.id,
             speaker="patient",
             text="Saya merasa cemas akhir-akhir ini, dok.",
             start_time=0.0, end_time=3.5,
         )
-        ser = SERResult(
+        nv = NonverbalResult(
             session_id=ses.id,
-            emotion="cemas",
-            confidence=0.87,
-            segment_start=0.0, segment_end=3.5,
+            frame=10,
+            timestamp=0.25,
+            current_loudness=-30.5,
+            baseline_loudness=-32.0,
+            delta_loudness=1.5,
+            loudness_category="No Significant Change",
+            current_pitch=120.0,
+            baseline_pitch=118.0,
+            delta_pitch=2.0,
+            pitch_category="No Significant Change",
         )
         birp = BIRPResult(
             session_id=ses.id,
@@ -87,9 +94,9 @@ async def main():
             plan="Lanjutkan sesi minggu depan dengan fokus manajemen kecemasan.",
         )
         audit = AuditLog(action="session_created", details=f'{{"session_id": {ses.id}}}')
-        session.add_all([transcript, ser, birp, audit])
+        session.add_all([transcript, nv, birp, audit])
         await session.commit()
-        print(f"[4/5] Created: Transcript, SER(emotion={ser.emotion}), BIRP, AuditLog ✓\n")
+        print(f"[4/5] Created: Transcript, NonverbalResult(frame={nv.frame}), BIRP, AuditLog ✓\n")
 
     # 5. Query all data
     async with factory() as s2:
@@ -110,14 +117,14 @@ async def main():
 
         result = await session.execute(
             select(Session).where(Session.id == ses.id)
-            .options(selectinload(Session.transcripts), selectinload(Session.ser_results))
+            .options(selectinload(Session.transcripts), selectinload(Session.nonverbal_results))
         )
         s = result.scalar_one()
         print(f"Session: id={s.id}, status={s.status}, created={s.created_at}")
         for t in s.transcripts:
             print(f"  Transcript: [{t.speaker}] \"{t.text}\" ({t.start_time:.1f}s-{t.end_time:.1f}s)")
-        for sr in s.ser_results:
-            print(f"  SER: emotion={sr.emotion}, confidence={sr.confidence:.0%}")
+        for nv in s.nonverbal_results:
+            print(f"  Nonverbal: frame={nv.frame} loud={nv.loudness_category} pitch={nv.pitch_category}")
 
         result = await session.execute(
             select(BIRPResult).where(BIRPResult.session_id == ses.id)
@@ -142,11 +149,11 @@ async def main():
         await session.commit()
         result = await session.execute(select(Transcript).where(Transcript.id == transcript.id))
         assert result.scalar_one_or_none() is None
-        result = await session.execute(select(SERResult).where(SERResult.id == ser.id))
+        result = await session.execute(select(NonverbalResult).where(NonverbalResult.id == nv.id))
         assert result.scalar_one_or_none() is None
         result = await session.execute(select(BIRPResult).where(BIRPResult.id == birp.id))
         assert result.scalar_one_or_none() is None
-        print("Cascade delete: Transcript, SER, BIRP all removed ✓")
+        print("Cascade delete: Transcript, Nonverbal, BIRP all removed ✓")
 
     print("\n✅ All database tests passed")
 
