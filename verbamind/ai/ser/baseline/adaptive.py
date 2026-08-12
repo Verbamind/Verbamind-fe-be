@@ -1,10 +1,6 @@
-from verbamind.ai.ser.config import (
-    EMA_ALPHA,
-    EMA_BETA,
-    MIN_LOUDNESS_DEVIATION
-)
-
+from verbamind.ai.ser.config import EMA_ALPHA, EMA_BETA, MIN_LOUDNESS_DEVIATION
 from verbamind.ai.ser.models.baseline import LoudnessBaseline
+
 
 def update_baseline(
     baseline: LoudnessBaseline,

@@ -1,7 +1,5 @@
 """BIRP page — editable fields with labels (Behavior, Intervention, Response, Plan)."""
 
-from PySide6.QtCore import Qt
-from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -11,6 +9,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from verbamind.gui.widgets.section_title import SectionTitle
 
 BIRP_FIELDS = [
     ("behavior", "Behavior", "Patient's observable behavior and presentation during session."),

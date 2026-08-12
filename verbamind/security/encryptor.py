@@ -1,7 +1,5 @@
 """AES-256-GCM encryption/decryption for audio files and in-memory data."""
 
-import os
-import struct
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes

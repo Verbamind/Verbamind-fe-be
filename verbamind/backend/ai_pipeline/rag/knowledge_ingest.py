@@ -31,7 +31,11 @@ def validasi_folder() -> None:
 
 
 def muat_semua_dokumen() -> list:
-    from langchain_community.document_loaders import DirectoryLoader, TextLoader, PyMuPDFLoader
+    from langchain_community.document_loaders import (
+        DirectoryLoader,
+        PyMuPDFLoader,
+        TextLoader,
+    )
 
     dokumen = []
 
@@ -73,8 +77,8 @@ def pecah_chunk(dokumen: list) -> list:
 
 
 def bangun_faiss(chunk: list) -> None:
-    from langchain_huggingface import HuggingFaceEmbeddings
     from langchain_community.vectorstores import FAISS
+    from langchain_huggingface import HuggingFaceEmbeddings
 
     print(f"[INFO] Memuat model: {NAMA_MODEL_EMBEDDING}...")
     emb = HuggingFaceEmbeddings(

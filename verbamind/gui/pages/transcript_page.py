@@ -1,16 +1,15 @@
 """Transcript page — table-based verbatim with emotion badges and timestamps."""
 
-from PySide6.QtCore import Qt
-from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
-    QLabel,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
+
+from verbamind.gui.widgets.section_title import SectionTitle
 
 EMOTION_COLORS = {
     "sedih": "#3b6fb5",
@@ -93,6 +92,6 @@ class TranscriptPage(QWidget):
             self._table.setItem(i, 0, time_item)
             self._table.setItem(i, 1, speaker_item)
             self._table.setItem(i, 2, text_item)
-            self._table.setItem(i, 3, QTableWidgetItem(badge))
+            self._table.setItem(i, 3, emotion_item)
             self._table.setItem(i, 4, QTableWidgetItem(physio))
             self._segment_count += 1

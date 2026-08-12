@@ -1,7 +1,7 @@
 """API client — HTTP interface to local FastAPI backend."""
 
-from urllib.request import Request, urlopen
 import json
+from urllib.request import Request, urlopen
 
 
 class VerbaMindClient:

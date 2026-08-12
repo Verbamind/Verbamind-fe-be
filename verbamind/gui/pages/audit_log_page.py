@@ -1,8 +1,8 @@
 """Audit Log page — table of system actions with date filter. Empty by default."""
 
 from PySide6.QtCore import Qt
-from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QDateEdit,
     QHBoxLayout,
@@ -14,7 +14,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtWidgets import QAbstractItemView
+
+from verbamind.gui.widgets.section_title import SectionTitle
 
 
 class AuditLogPage(QWidget):

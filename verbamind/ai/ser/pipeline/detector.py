@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from verbamind.ai.ser.baseline.initialization import initialize_baseline
 from verbamind.ai.ser.baseline.adaptive import update_baseline
+from verbamind.ai.ser.baseline.initialization import initialize_baseline
 from verbamind.ai.ser.fuzzy.inference import ChangeFuzzyInference
+
 
 class NonverbalChangeDetector:
 

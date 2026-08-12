@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from verbamind.backend.api.router import router
-from verbamind.config.config import get_backend_port, get_config
+from verbamind.config.config import get_backend_port
 
 
 @asynccontextmanager

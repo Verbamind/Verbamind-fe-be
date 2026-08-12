@@ -1,7 +1,6 @@
 """Dashboard — stat cards + recent sessions table. No dummy data — pulls from SessionManager."""
 
 from PySide6.QtCore import Qt
-from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QGroupBox,
@@ -15,6 +14,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from verbamind.gui.widgets.section_title import SectionTitle
 
 
 class StatCard(QWidget):

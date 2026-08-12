@@ -72,7 +72,7 @@ def _waveform_widget(parent=None) -> QWidget:
         h = random.randint(30, 95)
         seg = QLabel()
         seg.setFixedHeight(int(h * 0.22))
-        seg.setStyleSheet(f"background: #0a5fc4; opacity: 0.7; border-radius: 1px;")
+        seg.setStyleSheet("background: #0a5fc4; opacity: 0.7; border-radius: 1px;")
         layout.addWidget(seg, 1)
     return bar
 

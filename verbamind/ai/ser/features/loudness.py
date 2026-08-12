@@ -1,5 +1,5 @@
-import numpy as np
 import librosa
+import numpy as np
 
 from verbamind.ai.ser.config import FRAME_DURATION, FRAME_OVERLAP
 

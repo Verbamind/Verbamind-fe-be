@@ -3,7 +3,6 @@
 State machine: idle → loaded → playing ↔ paused → loaded.
 """
 
-from typing import Any
 
 from verbamind.config.config import get_config
 from verbamind.security.encryptor import decrypt_bytes

@@ -1,17 +1,16 @@
 """Settings page — database info, audio config, license info."""
 
-from PySide6.QtCore import Qt
-from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
+
+from verbamind.gui.widgets.section_title import SectionTitle
 
 
 class SettingsPage(QWidget):

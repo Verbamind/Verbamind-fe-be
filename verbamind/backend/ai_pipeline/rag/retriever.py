@@ -3,12 +3,11 @@
 Adapted from Verbamind_RAG src/main_rag.py — muat_index_faiss + ambil_konteks_relevan.
 """
 
-import sys
 from pathlib import Path
 
 try:
-    from langchain_huggingface import HuggingFaceEmbeddings
     from langchain_community.vectorstores import FAISS
+    from langchain_huggingface import HuggingFaceEmbeddings
 except ImportError:
     HuggingFaceEmbeddings = None  # type: ignore
     FAISS = None  # type: ignore

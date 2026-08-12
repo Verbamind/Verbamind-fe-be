@@ -1,7 +1,6 @@
 """Activation page — HWID display, license key input, activation flow."""
 
 from PySide6.QtCore import Qt
-from verbamind.gui.widgets.section_title import SectionTitle
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -11,6 +10,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from verbamind.gui.widgets.section_title import SectionTitle
 
 
 class ActivationPage(QWidget):
@@ -76,7 +77,11 @@ class ActivationPage(QWidget):
             self.show_status("Please enter a license key.", success=False)
             return
         try:
-            from verbamind.security.activation import activate, get_hardware_id, validate_license_key
+            from verbamind.security.activation import (
+                activate,
+                get_hardware_id,
+                validate_license_key,
+            )
             hwid = get_hardware_id()
             if validate_license_key(key, hwid, "secret-master-key"):
                 activate(key)

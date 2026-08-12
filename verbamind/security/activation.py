@@ -2,7 +2,6 @@
 
 import hashlib
 import hmac
-import os
 import platform
 import uuid
 from pathlib import Path

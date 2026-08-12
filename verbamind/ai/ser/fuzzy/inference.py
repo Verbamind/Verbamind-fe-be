@@ -1,6 +1,7 @@
 import numpy as np
 import skfuzzy as fuzz
 
+
 class ChangeFuzzyInference:
 
     def __init__(self):

@@ -30,8 +30,8 @@ async def generate_birp(request: dict):
 
         try:
             from verbamind.backend.ai_pipeline.birp_generator import BIRPGenerator
-            from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
             from verbamind.backend.ai_pipeline.llm import LLMWrapper
+            from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
 
             retriever = RAGRetriever(index_dir="faiss_index")
             llm = LLMWrapper()

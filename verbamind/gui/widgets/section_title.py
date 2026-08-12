@@ -4,7 +4,7 @@ Uses QFrame separator instead of border-bottom in QSS (which clips text in Qt).
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 
 class SectionTitle(QWidget):

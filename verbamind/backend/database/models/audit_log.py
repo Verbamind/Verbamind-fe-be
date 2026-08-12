@@ -1,6 +1,5 @@
 """Audit Log model — tracks all significant system actions."""
 
-import json
 from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, String, Text, func

@@ -1,7 +1,16 @@
-import numpy as np
 import librosa
+import numpy as np
 from scipy.signal import find_peaks
-from verbamind.ai.ser.config import FRAME_DURATION, FRAME_OVERLAP, PITCH_MAX, PITCH_MIN, PITCH_PROMINENCE, PITCH_CORRELATION_THRESHOLD
+
+from verbamind.ai.ser.config import (
+    FRAME_DURATION,
+    FRAME_OVERLAP,
+    PITCH_CORRELATION_THRESHOLD,
+    PITCH_MAX,
+    PITCH_MIN,
+    PITCH_PROMINENCE,
+)
+
 
 def frame_audio(audio, sr):
     """
