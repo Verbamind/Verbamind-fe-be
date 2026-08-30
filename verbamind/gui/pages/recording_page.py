@@ -435,15 +435,18 @@ class RecordingPage(QWidget):
             return
         import os
 
-        os.makedirs("recordings/consent", exist_ok=True)
-        dest = os.path.join("recordings/consent", os.path.basename(path))
+        from verbamind.config.paths import recordings_dir
+
+        consent_dir = recordings_dir() / "consent"
+        consent_dir.mkdir(parents=True, exist_ok=True)
+        dest = consent_dir / os.path.basename(path)
         try:
             shutil.copy(path, dest)
         except OSError as e:
             QMessageBox.warning(self, "Upload Konsen", f"Gagal menyalin berkas: {e}")
             return
         self._consent_edit.setText(os.path.basename(path))
-        self._consent_path = dest
+        self._consent_path = str(dest)
 
     def audio_source(self) -> tuple[str, bytes | None, int] | None:
         """Resolve audio for AI processing.
@@ -520,12 +523,14 @@ class RecordingPage(QWidget):
     def _on_record(self):
         if self._rec_worker is not None and self._rec_worker.isRunning():
             return
-        import os
         import time
 
-        os.makedirs("recordings", exist_ok=True)
+        from verbamind.config.paths import recordings_dir
+
+        rec_dir = recordings_dir()
+        rec_dir.mkdir(parents=True, exist_ok=True)
         ts = time.strftime("%Y%m%d_%H%M%S")
-        filepath = os.path.join("recordings", f"REC_{ts}.vera")
+        filepath = str(rec_dir / f"REC_{ts}.vera")
 
         # stop mic monitors to free devices
         self._mic1_monitor.stop()

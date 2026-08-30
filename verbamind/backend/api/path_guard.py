@@ -5,12 +5,13 @@ Prevents path traversal and arbitrary file read/delete via the localhost API.
 
 from pathlib import Path
 
-RECORDINGS_DIR = Path("recordings").resolve()
+from verbamind.config.paths import recordings_dir
+
 ALLOWED_AUDIO_SUFFIXES = {".vera", ".wav", ".mp3", ".m4a", ".flac", ".ogg"}
 
 
 def recordings_root() -> Path:
-    return RECORDINGS_DIR
+    return recordings_dir()
 
 
 def _is_inside(path: Path, root: Path) -> bool:

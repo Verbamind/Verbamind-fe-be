@@ -65,7 +65,9 @@ def get_backend_port() -> int:
 
 
 def get_database_url() -> str:
-    return str(get_config()["database"]["url"])
+    from verbamind.config.paths import database_path
+
+    return f"sqlite+aiosqlite:///{database_path()}"
 
 
 def get_models_dir() -> dict[str, str]:

@@ -1,7 +1,6 @@
 """Session manager — creates, lists, and deletes recording sessions with .vera file lifecycle."""
 
 import json
-import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,7 +10,9 @@ from typing import Any
 class SessionManager:
     def __init__(self, recordings_dir: str | None = None):
         if recordings_dir is None:
-            recordings_dir = os.path.join(os.getcwd(), "recordings")
+            from verbamind.config.paths import recordings_dir as _rec_dir
+
+            recordings_dir = str(_rec_dir())
         self._recordings_dir = Path(recordings_dir)
         self._recordings_dir.mkdir(parents=True, exist_ok=True)
         self._index_path = self._recordings_dir / "sessions.json"

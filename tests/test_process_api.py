@@ -51,7 +51,9 @@ def _make_wav() -> bytes:
 
 
 def _write_wav_in_recordings() -> Path:
-    rec = Path("recordings")
+    from verbamind.config.paths import recordings_dir
+
+    rec = recordings_dir()
     rec.mkdir(parents=True, exist_ok=True)
     path = rec / f"_test_{uuid.uuid4().hex[:8]}.wav"
     path.write_bytes(_make_wav())

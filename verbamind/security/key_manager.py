@@ -8,10 +8,11 @@ import ctypes
 import ctypes.wintypes
 from pathlib import Path
 
+from verbamind.config.paths import key_file
 from verbamind.security.encryptor import generate_aes_key as _generate_raw_key
 
 _KEY_FILE_NAME = "key.dat"
-_KEY_DIR = Path(__file__).resolve().parent.parent.parent / "config"
+_KEY_DIR = key_file().parent
 
 _CRYPTPROTECT_UI_FORBIDDEN = 0x1
 

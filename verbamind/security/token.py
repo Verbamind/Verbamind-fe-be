@@ -6,10 +6,10 @@ This closes the DNS-rebinding / cross-origin / local-process attack surface.
 """
 
 import secrets
-from pathlib import Path
 
-_TOKEN_DIR = Path(__file__).resolve().parent.parent.parent / "config"
-_TOKEN_FILE = _TOKEN_DIR / "api_token.txt"
+from verbamind.config.paths import token_file
+
+_TOKEN_FILE = token_file()
 
 
 def _read_token() -> str | None:
@@ -25,7 +25,7 @@ def get_or_create_token() -> str:
     token = _read_token()
     if token:
         return token
-    _TOKEN_DIR.mkdir(parents=True, exist_ok=True)
+    _TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
     token = secrets.token_hex(32)
     _TOKEN_FILE.write_text(token, encoding="utf-8")
     return token

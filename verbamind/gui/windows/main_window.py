@@ -1,7 +1,5 @@
 """VerbaMind main window — sidebar, statusbar, page content."""
 
-import os
-
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -81,9 +79,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1024, 680)
         self.setStyleSheet(MAIN_STYLESHEET)
 
-        self._session_manager = SessionManager(
-            recordings_dir=os.path.join(os.getcwd(), "recordings")
-        )
+        self._session_manager = SessionManager()
         self._api_client = VerbaMindClient()
         self._process_worker: ProcessWorker | None = None
 
