@@ -41,7 +41,7 @@ def gabungkan_transkrip_menjadi_narasi(
         prefix = ""
         if sertakan_nama_speaker:
             if sertakan_label_emosi and label_emosi:
-                prefix = f"{nama_speaker} ({label_emosi}): "
+                prefix = f"{nama_speaker} [isyarat suara: {label_emosi}]: "
             else:
                 prefix = f"{nama_speaker}: "
         baris_narasi.append(f"{prefix}{teks_ucapan}")

@@ -1,6 +1,6 @@
 """E2E integration test — full VerbaMind pipeline.
 
-Tests the complete flow: record → encrypt → decrypt → STT → SER → merge → BIRP.
+Tests the complete flow: record → encrypt → decrypt → STT → SpeechToNonverbalInformation → merge → BIRP.
 Uses mocks for Whisper and Ollama (models not bundled in dev).
 """
 
@@ -22,12 +22,12 @@ def temp_dir():
 
 @pytest.fixture
 def sample_wav_path():
-    """Path to the sine wave fixture for SER testing."""
+    """Path to the sine wave fixture for SpeechToNonverbalInformation testing."""
     return str(Path(__file__).parent / "fixtures" / "audio" / "sine_300Hz.wav")
 
 
 class TestFullPipelineE2E:
-    """End-to-end: record → encrypt → decrypt → STT → SER → merge → BIRP."""
+    """End-to-end: record → encrypt → decrypt → STT → SpeechToNonverbalInformation → merge → BIRP."""
 
     def test_encrypt_decrypt_roundtrip(self, temp_dir):
         """Step 1: Audio recorded → AES-256 encrypt → .vera → decrypt."""
@@ -96,13 +96,13 @@ class TestFullPipelineE2E:
         assert "text" in merged[0]
 
     def test_ser_analysis(self, sample_wav_path):
-        """Step 5: SER nonverbal cue detection on sample audio."""
+        """Step 5: SpeechToNonverbalInformation nonverbal cue detection on sample audio."""
         if not os.path.exists(sample_wav_path):
             pytest.skip("Audio fixture missing")
 
-        from verbamind.backend.ai_pipeline.ser_service import SERService
+        from verbamind.backend.ai_pipeline.speech_to_nonverbal_service import SpeechToNonverbalService
 
-        svc = SERService()
+        svc = SpeechToNonverbalService()
         results = svc.analyze_file(sample_wav_path)
 
         assert len(results) > 0
@@ -163,7 +163,7 @@ class TestFullPipelineE2E:
         assert not is_activated()
 
     def test_full_e2e_pipeline(self, sample_wav_path):
-        """Complete pipeline: encrypt → decrypt → STT → SER → merge → BIRP."""
+        """Complete pipeline: encrypt → decrypt → STT → SpeechToNonverbalInformation → merge → BIRP."""
         # 1. Security: generate key
         from verbamind.security.encryptor import decrypt_bytes, encrypt_bytes, generate_aes_key
 
@@ -179,13 +179,13 @@ class TestFullPipelineE2E:
         stt = TranscribeService(mock=True)
         segments = stt.transcribe(original)
 
-        # 3. SER (if fixture available)
+        # 3. SpeechToNonverbalInformation (if fixture available)
         nonverbal = []
         if os.path.exists(sample_wav_path):
-            from verbamind.backend.ai_pipeline.ser_service import SERService
+            from verbamind.backend.ai_pipeline.speech_to_nonverbal_service import SpeechToNonverbalService
 
-            ser = SERService()
-            nonverbal_raw = ser.analyze_file(sample_wav_path)
+            SpeechToNonverbalInformation = SpeechToNonverbalService()
+            nonverbal_raw = SpeechToNonverbalInformation.analyze_file(sample_wav_path)
             # Aggregate: take dominant category
             if nonverbal_raw:
                 nonverbal = [{
@@ -235,8 +235,9 @@ class TestAPIIntegration:
         from fastapi.testclient import TestClient
 
         from verbamind.backend.main import app
+        from verbamind.security.token import get_token
 
-        client = TestClient(app)
+        client = TestClient(app, headers={"X-VerbaMind-Token": get_token()})
         resp = client.get("/api/v1/health")
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
@@ -246,10 +247,10 @@ class TestAPIIntegration:
 
         assert "/api/v1/stt/transcribe" in [r.path for r in router.routes]
 
-    def test_ser_router_exists(self):
-        from verbamind.backend.api.ser_router import router
+    def test_speech_to_nonverbal_router_exists(self):
+        from verbamind.backend.api.speech_to_nonverbal_router import router
 
-        assert "/api/v1/ser/analyze" in [r.path for r in router.routes]
+        assert "/api/v1/nonverbal/analyze" in [r.path for r in router.routes]
 
     def test_birp_router_exists(self):
         from verbamind.backend.api.birp_router import router

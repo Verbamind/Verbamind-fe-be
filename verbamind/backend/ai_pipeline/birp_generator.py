@@ -9,10 +9,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from verbamind.backend.ai_pipeline.llm import LLMWrapper
+from verbamind.backend.ai_pipeline.llm import MODEL_LLM, LLMWrapper
 from verbamind.backend.ai_pipeline.prompts.birp_prompt import (
     BIRP_REQUIRED_KEYS,
-    SYSTEM_PROMPT_TEMPLATE,
+    SYSTEM_PROMPT,
+    build_user_prompt,
     validate_birp_output,
 )
 from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
@@ -57,13 +58,10 @@ class BIRPGenerator:
             logger.warning("Index FAISS tidak ditemukan, melanjutkan tanpa RAG")
             konteks = "(Tidak ada konteks referensi tambahan yang ditemukan.)"
 
-        # Tahap 3: Panggil LLM
-        prompt = SYSTEM_PROMPT_TEMPLATE.format(
-            konteks_referensi=konteks,
-            narasi_transkrip=narasi,
-        )
+        # Tahap 3: Panggil LLM (system = instruksi, user = konteks + transkrip)
+        user_prompt = build_user_prompt(konteks_referensi=konteks, narasi_transkrip=narasi)
         logger.info("Mengirim prompt ke LLM...")
-        response_raw = self._llm.generate(prompt)
+        response_raw = self._llm.generate(user_prompt, system=SYSTEM_PROMPT)
         birp = self._parse_response(response_raw)
         birp = validate_birp_output(birp)
 
@@ -89,7 +87,7 @@ class BIRPGenerator:
         output = {
             "id_sesi": session_id,
             "waktu_analisis": datetime.now().isoformat(),
-            "model_llm": "qwen2.5:7b-instruct",
+            "model_llm": MODEL_LLM,
             "catatan_klinis_birp": birp,
         }
         path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")

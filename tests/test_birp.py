@@ -62,7 +62,7 @@ class TestVerbatimParser:
         narasi = gabungkan_transkrip_menjadi_narasi(
             data, sertakan_nama_speaker=True, sertakan_label_emosi=True
         )
-        assert "Pasien (takut): Saya takut." in narasi
+        assert "Pasien [isyarat suara: takut]: Saya takut." in narasi
 
     def test_gabungkan_kosong_raises(self):
         from verbamind.backend.ai_pipeline.rag.verbatim_parser import (
@@ -104,22 +104,27 @@ class TestVerbatimParser:
 class TestBIRPPrompt:
     def test_system_prompt_template(self):
         from verbamind.backend.ai_pipeline.prompts.birp_prompt import (
-            SYSTEM_PROMPT_TEMPLATE,
+            USER_PROMPT_TEMPLATE,
         )
 
-        prompt = SYSTEM_PROMPT_TEMPLATE.format(
+        prompt = USER_PROMPT_TEMPLATE.format(
             konteks_referensi="TEST_KONTEKS", narasi_transkrip="TEST_NARASI"
         )
         assert "TEST_KONTEKS" in prompt
         assert "TEST_NARASI" in prompt
-        assert "behavior" in prompt.lower()
-        assert "BIRP" in prompt
+        assert "Bahasa Indonesia" in prompt
 
     def test_build_system_prompt(self):
-        from verbamind.backend.ai_pipeline.prompts.birp_prompt import build_system_prompt
+        from verbamind.backend.ai_pipeline.prompts.birp_prompt import (
+            SYSTEM_PROMPT,
+            build_system_prompt,
+        )
 
         result = build_system_prompt()
-        assert "{konteks_referensi}" in result
+        assert result == SYSTEM_PROMPT
+        assert "behavior" in result.lower()
+        assert "BIRP" in result
+        assert "Bahasa Indonesia" in result
 
     def test_validate_birp_output_complete(self):
         from verbamind.backend.ai_pipeline.prompts.birp_prompt import validate_birp_output
@@ -140,10 +145,14 @@ class TestBIRPPrompt:
 
 class TestLLMWrapper:
     def test_llm_default_config(self):
+        import os
+
         from verbamind.backend.ai_pipeline.llm import LLMWrapper
 
         llm = LLMWrapper()
-        assert llm._model == "qwen2.5:7b-instruct"
+        assert llm._model == os.environ.get(
+            "VERBAMIND_LLM_MODEL", "qwen2.5:3b-instruct"
+        )
         assert llm._base_url == "http://localhost:11434"
 
     def test_llm_custom_config(self):
@@ -300,9 +309,10 @@ class TestBIRPAPI:
 
         from verbamind.backend.api.birp_router import router
         from verbamind.backend.main import app
+        from verbamind.security.token import get_token
 
         app.include_router(router)
-        client = TestClient(app)
+        client = TestClient(app, headers={"X-VerbaMind-Token": get_token()})
         response = client.post("/api/v1/birp/generate", json={
             "session_id": "SES-01",
             "verbatim_segments": [

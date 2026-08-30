@@ -4,11 +4,13 @@ Adapted from Verbamind_RAG src/main_rag.py: inisialisasi_llm_ollama.
 """
 
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 URL_OLLAMA = "http://localhost:11434"
-MODEL_LLM = "qwen2.5:7b-instruct"
+# Model dapat dioverride via env VERBAMIND_LLM_MODEL tanpa mengubah kode.
+MODEL_LLM = os.environ.get("VERBAMIND_LLM_MODEL", "qwen2.5:3b-instruct")
 TEMPERATURE = 0.3
 
 
@@ -28,8 +30,15 @@ class LLMWrapper:
             format="json",
         )
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, system: str | None = None) -> str:
         if self._llm is None:
             self._init()
-        response = self._llm.invoke(prompt)
+        if system is not None:
+            from langchain_core.messages import HumanMessage, SystemMessage
+
+            response = self._llm.invoke(
+                [SystemMessage(content=system), HumanMessage(content=prompt)]
+            )
+        else:
+            response = self._llm.invoke(prompt)
         return response.content

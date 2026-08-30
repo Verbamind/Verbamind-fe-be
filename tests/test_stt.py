@@ -43,12 +43,12 @@ class TestTranscribeService:
         segments = svc.transcribe(b"")
         assert segments == []
 
-    def test_model_not_found_raises_clear_error(self):
+    def test_invalid_whisper_model_raises_clear_error(self):
         from verbamind.backend.ai_pipeline.transcribe_service import TranscribeService
 
-        svc = TranscribeService(model_path="nonexistent/model.pt", mock=False)
-        with pytest.raises(FileNotFoundError):
-            svc.transcribe(b"test")
+        svc = TranscribeService(model_path="nonexistent-model", mock=False)
+        with pytest.raises(RuntimeError):
+            svc.transcribe(b"RIFF\xf0\x3f\x00\x00WAVEfmt ")
 
 
 class TestSpeakerLabeler:

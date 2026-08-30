@@ -1,31 +1,23 @@
-"""Sidebar — 5 nav items matching ui-verbamind-a.html."""
+"""Sidebar — 5 nav items with unicolor (monochrome) vector icons."""
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import QListWidget, QListWidgetItem
 
+from verbamind.gui.widgets.icons import make_icon
 
-def _make_dot_icon(size=8, color="#8fa6bd"):
-    pixmap = QPixmap(size, size)
-    pixmap.fill(Qt.transparent)
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.Antialiasing)
-    painter.setBrush(QColor(color))
-    painter.setPen(Qt.NoPen)
-    painter.drawEllipse(0, 0, size, size)
-    painter.end()
-    return QIcon(pixmap)
+ICON_COLOR = "#5a5a5a"
+ICON_SIZE = 18
 
 
 class Sidebar(QListWidget):
     navigation_changed = Signal(int)
 
     ITEMS = [
-        ("Dashboard", "📊"),
-        ("Data Pasien", "👤"),
-        ("Sesi Baru", "🎙"),
-        ("Audit Log", "📋"),
-        ("Pengaturan", "⚙"),
+        ("Dashboard", "dashboard"),
+        ("Data Pasien", "patients"),
+        ("Sesi Baru", "record"),
+        ("Log Audit", "audit"),
+        ("Pengaturan", "settings"),
     ]
 
     def __init__(self, parent=None):
@@ -34,12 +26,11 @@ class Sidebar(QListWidget):
         self.setFixedWidth(190)
         self.setSpacing(0)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setIconSize(QSize(ICON_SIZE, ICON_SIZE))
 
-        icon = _make_dot_icon()
-
-        for label, emoji in self.ITEMS:
-            item = QListWidgetItem(f"  {emoji}  {label}")
-            item.setIcon(icon)
+        for label, kind in self.ITEMS:
+            item = QListWidgetItem(label)
+            item.setIcon(make_icon(kind, size=ICON_SIZE, color=ICON_COLOR))
             self.addItem(item)
 
         self.setCurrentRow(0)

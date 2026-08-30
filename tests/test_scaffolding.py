@@ -4,6 +4,9 @@ from fastapi.testclient import TestClient
 
 from verbamind.backend.main import app
 from verbamind.config.config import _load_config, get_config, get_database_url
+from verbamind.security.token import get_token
+
+AUTH_HEADERS = {"X-VerbaMind-Token": get_token()}
 
 
 def test_config_loads_with_defaults():
@@ -25,7 +28,7 @@ def test_get_database_url():
 
 
 def test_backend_health_check():
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}

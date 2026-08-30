@@ -16,6 +16,10 @@ class Session(Base):
     psychologist_id: Mapped[int] = mapped_column(ForeignKey("psychologists.id", ondelete="CASCADE"), nullable=False)
     audio_file_path: Mapped[str] = mapped_column(String(500), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="recorded", server_default="recorded")
+    duration_seconds: Mapped[int] = mapped_column(Integer, nullable=True)
+    birp_status: Mapped[str] = mapped_column(String(50), nullable=True)
+    audio_status: Mapped[str] = mapped_column(String(50), nullable=True)
+    consent_file: Mapped[str] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

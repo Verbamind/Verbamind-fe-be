@@ -1,4 +1,4 @@
-"""NonverbalResult model — per-frame loudness + pitch analysis from SER pipeline.
+"""NonverbalResult model — per-frame loudness + pitch analysis from SpeechToNonverbalInformation pipeline.
 
 Replaces the old SERResult table. Stores frame-level nonverbal cue data
 from Verbamind_SpeechToNonverbalInformation pipeline.

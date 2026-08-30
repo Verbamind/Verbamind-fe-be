@@ -1,6 +1,6 @@
-"""TDD tests for SER (nonverbal cue detection) service.
+"""TDD tests for SpeechToNonverbalInformation (deteksi isyarat nonverbal) service.
 
-Tests the SERService that wraps the Verbamind_SpeechToNonverbalInformation
+Tests the SpeechToNonverbalService that wraps the Verbamind_SpeechToNonverbalInformation
 pipeline and produces per-frame NonverbalResult-ready dicts.
 """
 
@@ -12,22 +12,22 @@ import pytest
 FIXTURES = Path(__file__).parent / "fixtures" / "audio"
 
 
-class TestSERService:
+class TestSpeechToNonverbalService:
     def test_service_created(self):
-        from verbamind.backend.ai_pipeline.ser_service import SERService
+        from verbamind.backend.ai_pipeline.speech_to_nonverbal_service import SpeechToNonverbalService
 
-        svc = SERService()
+        svc = SpeechToNonverbalService()
         assert svc is not None
 
     def test_analyze_sine_wave(self):
         """Sine wave should produce many frames with loudness categories."""
-        from verbamind.backend.ai_pipeline.ser_service import SERService
+        from verbamind.backend.ai_pipeline.speech_to_nonverbal_service import SpeechToNonverbalService
 
         wav_path = str(FIXTURES / "sine_300Hz.wav")
         if not os.path.exists(wav_path):
             pytest.skip("sine fixture missing")
 
-        svc = SERService()
+        svc = SpeechToNonverbalService()
         results = svc.analyze_file(wav_path)
 
         assert isinstance(results, list)
@@ -47,13 +47,13 @@ class TestSERService:
 
     def test_analyze_categories_valid(self):
         """All loudness/pitch categories must be from the known set."""
-        from verbamind.backend.ai_pipeline.ser_service import SERService
+        from verbamind.backend.ai_pipeline.speech_to_nonverbal_service import SpeechToNonverbalService
 
         wav_path = str(FIXTURES / "sine_300Hz.wav")
         if not os.path.exists(wav_path):
             pytest.skip("sine fixture missing")
 
-        svc = SERService()
+        svc = SpeechToNonverbalService()
         results = svc.analyze_file(wav_path)
 
         valid = {
@@ -66,13 +66,13 @@ class TestSERService:
 
     def test_timestamps_monotonic(self):
         """Frame timestamps should be monotonically increasing."""
-        from verbamind.backend.ai_pipeline.ser_service import SERService
+        from verbamind.backend.ai_pipeline.speech_to_nonverbal_service import SpeechToNonverbalService
 
         wav_path = str(FIXTURES / "sine_300Hz.wav")
         if not os.path.exists(wav_path):
             pytest.skip("sine fixture missing")
 
-        svc = SERService()
+        svc = SpeechToNonverbalService()
         results = svc.analyze_file(wav_path)
 
         timestamps = [r["timestamp"] for r in results]
@@ -81,13 +81,13 @@ class TestSERService:
 
     def test_frame_indices_sequential(self):
         """Frame indices should be sequential integers."""
-        from verbamind.backend.ai_pipeline.ser_service import SERService
+        from verbamind.backend.ai_pipeline.speech_to_nonverbal_service import SpeechToNonverbalService
 
         wav_path = str(FIXTURES / "sine_300Hz.wav")
         if not os.path.exists(wav_path):
             pytest.skip("sine fixture missing")
 
-        svc = SERService()
+        svc = SpeechToNonverbalService()
         results = svc.analyze_file(wav_path)
 
         frames = [r["frame"] for r in results]
@@ -97,7 +97,7 @@ class TestSERService:
 
 class TestSEREndpoint:
     def test_router_registered(self):
-        from verbamind.backend.api.ser_router import router
+        from verbamind.backend.api.speech_to_nonverbal_router import router
 
         routes = [r.path for r in router.routes]
-        assert "/api/v1/ser/analyze" in routes
+        assert "/api/v1/nonverbal/analyze" in routes

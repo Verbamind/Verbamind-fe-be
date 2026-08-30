@@ -23,7 +23,7 @@ class ActivationPage(QWidget):
 
         title = SectionTitle("Aktivasi Lisensi")
 
-        hwid_group = QGroupBox("Hardware ID")
+        hwid_group = QGroupBox("ID Perangkat")
         hwid_layout = QVBoxLayout(hwid_group)
         try:
             from verbamind.security.activation import get_hardware_id
@@ -38,7 +38,7 @@ class ActivationPage(QWidget):
         )
         hwid_layout.addWidget(hwid_label)
 
-        license_group = QGroupBox("Enter License Key")
+        license_group = QGroupBox("Masukkan Kunci Lisensi")
         license_layout = QVBoxLayout(license_group)
         license_layout.setSpacing(10)
         self._license_input = QLineEdit()
@@ -50,7 +50,7 @@ class ActivationPage(QWidget):
 
         btn_row = QHBoxLayout()
         btn_row.setSpacing(8)
-        self._activate_btn = QPushButton("Activate License")
+        self._activate_btn = QPushButton("Aktifkan Lisensi")
         self._activate_btn.setObjectName("primary_btn")
         btn_row.addWidget(self._activate_btn)
         btn_row.addStretch()
@@ -74,7 +74,7 @@ class ActivationPage(QWidget):
     def _on_activate(self):
         key = self._license_input.text().strip()
         if not key:
-            self.show_status("Please enter a license key.", success=False)
+            self.show_status("Masukkan kunci lisensi terlebih dahulu.", success=False)
             return
         try:
             from verbamind.security.activation import (
@@ -85,13 +85,13 @@ class ActivationPage(QWidget):
             hwid = get_hardware_id()
             if validate_license_key(key, hwid, "secret-master-key"):
                 activate(key)
-                self.show_status("✓ Activation successful — VerbaMind is ready.", success=True)
+                self.show_status("✓ Aktivasi berhasil — VerbaMind siap digunakan.", success=True)
                 self._activate_btn.setEnabled(False)
                 self._license_input.setEnabled(False)
             else:
-                self.show_status("✗ Invalid license key. Please check and try again.", success=False)
+                self.show_status("✗ Kunci lisensi tidak valid. Periksa dan coba lagi.", success=False)
         except Exception as e:
-            self.show_status(f"Activation error: {e}", success=False)
+            self.show_status(f"Kesalahan aktivasi: {e}", success=False)
 
     def show_status(self, message: str, success: bool = False) -> None:
         self._status_label.setText(message)

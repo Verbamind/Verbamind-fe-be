@@ -1,6 +1,6 @@
 import numpy as np
 
-from verbamind.ai.ser.models.baseline import LoudnessBaseline
+from verbamind.ai.speech_to_nonverbal.models.baseline import LoudnessBaseline
 
 
 def initialize_baseline(loudness_values):

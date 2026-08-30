@@ -1,7 +1,7 @@
 import librosa
 import numpy as np
 
-from verbamind.ai.ser.config import FRAME_DURATION, FRAME_OVERLAP
+from verbamind.ai.speech_to_nonverbal.config import FRAME_DURATION, FRAME_OVERLAP
 
 
 def frame_audio(audio, sr):

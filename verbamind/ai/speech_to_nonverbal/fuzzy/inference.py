@@ -35,6 +35,8 @@ class ChangeFuzzyInference:
 
     def infer(self, delta, deviation):
 
+        if not deviation or deviation != deviation:  # zero or NaN
+            deviation = 1e-6
         normalized = delta / deviation
 
         very_low_degree = fuzz.interp_membership(

@@ -2,7 +2,7 @@ import librosa
 import numpy as np
 from scipy.signal import find_peaks
 
-from verbamind.ai.ser.config import (
+from verbamind.ai.speech_to_nonverbal.config import (
     FRAME_DURATION,
     FRAME_OVERLAP,
     PITCH_CORRELATION_THRESHOLD,

@@ -13,6 +13,8 @@ class Patient(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     age: Mapped[int] = mapped_column(Integer, nullable=True)
     gender: Mapped[str] = mapped_column(String(50), nullable=True)
+    birth_date: Mapped[str] = mapped_column(String(20), nullable=True)
+    medical_record: Mapped[str] = mapped_column(String(100), nullable=True)
     notes: Mapped[str] = mapped_column(String(2000), nullable=True)
 
     sessions = relationship("Session", back_populates="patient", cascade="all, delete-orphan")

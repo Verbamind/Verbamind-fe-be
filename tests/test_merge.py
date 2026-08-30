@@ -1,4 +1,4 @@
-"""TDD tests for merged verbatim engine — merges verbal (STT) + non-verbal (SER) data.
+"""TDD tests for merged verbatim engine — merges verbal (STT) + non-verbal (SpeechToNonverbalInformation) data.
 
 RED phase: all imports will fail since modules don't exist yet.
 """
@@ -28,10 +28,10 @@ class TestMergeService:
         stt = [
             {"text": "I feel anxious", "start": 0.0, "end": 2.0, "channel": 0, "speaker": "patient"},
         ]
-        ser = [
+        SpeechToNonverbalInformation = [
             {"emotion": "anxious", "confidence": 0.85, "segment_start": 0.0, "segment_end": 2.0},
         ]
-        merged = svc.merge(verbal=stt, non_verbal=ser)
+        merged = svc.merge(verbal=stt, non_verbal=SpeechToNonverbalInformation)
         assert merged[0]["emotion"] == "anxious"
         assert merged[0]["emotion_confidence"] == 0.85
 
@@ -42,11 +42,11 @@ class TestMergeService:
         stt = [
             {"text": "Long reply", "start": 0.0, "end": 5.0, "channel": 0, "speaker": "patient"},
         ]
-        ser = [
+        SpeechToNonverbalInformation = [
             {"emotion": "sad", "confidence": 0.6, "segment_start": 0.0, "segment_end": 5.0},
             {"emotion": "anxious", "confidence": 0.9, "segment_start": 0.0, "segment_end": 5.0},
         ]
-        merged = svc.merge(verbal=stt, non_verbal=ser)
+        merged = svc.merge(verbal=stt, non_verbal=SpeechToNonverbalInformation)
         assert merged[0]["emotion"] == "anxious"
 
     def test_merge_partial_overlap(self):
@@ -57,10 +57,10 @@ class TestMergeService:
             {"text": "Segment A", "start": 0.0, "end": 2.0, "channel": 0, "speaker": "patient"},
             {"text": "Segment B", "start": 2.0, "end": 4.0, "channel": 0, "speaker": "patient"},
         ]
-        ser = [
+        SpeechToNonverbalInformation = [
             {"emotion": "calm", "confidence": 0.8, "segment_start": 1.5, "segment_end": 3.0},
         ]
-        merged = svc.merge(verbal=stt, non_verbal=ser)
+        merged = svc.merge(verbal=stt, non_verbal=SpeechToNonverbalInformation)
         assert merged[0]["emotion"] == "calm"
         assert merged[1]["emotion"] == "calm"
 
@@ -113,9 +113,9 @@ class TestMergeService:
         stt = [
             {"text": "I'm scared", "start": 0.0, "end": 1.0, "channel": 0, "speaker": "patient"},
         ]
-        ser = [
+        SpeechToNonverbalInformation = [
             {"emotion": "fearful", "confidence": 0.95, "segment_start": 0.0, "segment_end": 1.0},
         ]
-        merged = svc.merge(verbal=stt, non_verbal=ser)
+        merged = svc.merge(verbal=stt, non_verbal=SpeechToNonverbalInformation)
         text = svc.to_verbatim_text(merged)
         assert "fearful" in text

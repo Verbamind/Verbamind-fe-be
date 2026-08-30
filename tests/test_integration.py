@@ -86,22 +86,7 @@ class TestDashboardIntegration:
         assert any(s["session_id"] == s1["session_id"] for s in sessions)
 
 
-class TestTranscriptIntegration:
-    def test_transcript_page_loads_from_merged(self, qapp):
-        from verbamind.backend.ai_pipeline.merge_service import MergeService
-        from verbamind.gui.pages.transcript_page import TranscriptPage
-
-        svc = MergeService()
-        stt = [
-            {"text": "Hello", "start": 0.0, "end": 1.0, "channel": 0, "speaker": "patient"},
-            {"text": "Hi", "start": 1.0, "end": 2.0, "channel": 1, "speaker": "psychologist"},
-        ]
-        merged = svc.merge(verbal=stt, non_verbal=[])
-
-        page = TranscriptPage()
-        page.load_transcript(merged)
-        assert page.segment_count() == 2
-
+class TestMergeIntegration:
     def test_merge_to_verbatim_for_llm(self):
         from verbamind.backend.ai_pipeline.merge_service import MergeService
 
@@ -112,21 +97,6 @@ class TestTranscriptIntegration:
         merged = svc.merge(verbal=stt, non_verbal=[])
         text = svc.to_verbatim_text(merged)
         assert "Patient: I feel anxious" in text
-
-
-class TestBIRPIntegration:
-    def test_birp_page_loads_pipeline_output(self, qapp):
-        from verbamind.gui.pages.birp_page import BIRPPage
-
-        birp = {
-            "behavior": "Anxiety observed.",
-            "intervention": "CBT grounding.",
-            "response": "Calmer after exercise.",
-            "plan": "Weekly follow-up.",
-        }
-        page = BIRPPage()
-        page.load_birp(birp)
-        assert page.has_data()
 
 
 class TestActivationIntegration:

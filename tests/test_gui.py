@@ -16,8 +16,8 @@ class TestMainWindow:
 
         window = MainWindow()
         assert "erbamind" in window.windowTitle().lower()
-        assert window.minimumWidth() == 800
-        assert window.minimumHeight() == 560
+        assert window.minimumWidth() == 1024
+        assert window.minimumHeight() == 680
         window.close()
 
 

@@ -15,7 +15,7 @@ _DEFAULT_CONFIG: dict[str, Any] = {
     },
     "models": {
         "whisper": "models/whisper/",
-        "ser": "models/ser/",
+        "SpeechToNonverbalInformation": "models/SpeechToNonverbalInformation/",
         "llm": "models/llm/",
     },
     "recording": {

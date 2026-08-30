@@ -1,6 +1,6 @@
 """Audit Log page — table of system actions with date filter. Empty by default."""
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -19,17 +19,20 @@ from verbamind.gui.widgets.section_title import SectionTitle
 
 
 class AuditLogPage(QWidget):
+
+    filter_requested = Signal(str, str, str)  # action, date_from, date_to
+
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        title = SectionTitle("Audit Log")
+        title = SectionTitle("Log Audit")
 
         filter_row = QHBoxLayout()
         action_combo = QComboBox()
-        action_combo.addItems(["Semua Aksi", "Login", "Buat Sesi", "Edit", "Delete", "Logout"])
+        action_combo.addItems(["Semua Aksi", "Buat Sesi", "Buat Pasien", "Ubah", "Hapus", "Proses AI"])
         from_lbl = QLabel("Dari:")
         from_lbl.setObjectName("text_dim")
         from_date = QDateEdit()
@@ -42,6 +45,19 @@ class AuditLogPage(QWidget):
         filter_btn = QPushButton("Filter")
         filter_btn.setObjectName("small_btn")
 
+        self._action_combo = action_combo
+        self._from_date = from_date
+        self._to_date = to_date
+
+        def apply_filter():
+            self.filter_requested.emit(
+                action_combo.currentText(),
+                from_date.date().toString("yyyy-MM-dd"),
+                to_date.date().toString("yyyy-MM-dd"),
+            )
+
+        filter_btn.clicked.connect(apply_filter)
+
         filter_row.addWidget(action_combo)
         filter_row.addWidget(from_lbl)
         filter_row.addWidget(from_date)
@@ -53,7 +69,7 @@ class AuditLogPage(QWidget):
         self._table = QTableWidget()
         self._table.setAlternatingRowColors(True)
         self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(["Timestamp", "Aksi", "Detail", "ID Sesi / Pasien"])
+        self._table.setHorizontalHeaderLabels(["Waktu", "Aksi", "Detail", "ID Sesi / Pasien"])
         self._table.horizontalHeader().setStretchLastSection(True)
         self._table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self._table.verticalHeader().setVisible(False)
@@ -76,6 +92,10 @@ class AuditLogPage(QWidget):
         layout.addStretch()
 
     def load_logs(self, logs: list[dict]):
+        self.load_entries(logs)
+
+    def load_entries(self, entries: list[dict]):
+        logs = entries
         if not logs:
             self._empty_label.setVisible(True)
             self._table.setVisible(False)

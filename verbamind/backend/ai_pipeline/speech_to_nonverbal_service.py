@@ -1,4 +1,4 @@
-"""SER Service — wraps Verbamind_SpeechToNonverbalInformation pipeline.
+"""SpeechToNonverbalInformation Service — wraps Verbamind_SpeechToNonverbalInformation pipeline.
 
 Loads audio file → extracts loudness + pitch features → runs adaptive baseline +
 fuzzy inference → returns per-frame nonverbal results ready for DB persistence.
@@ -10,15 +10,19 @@ from typing import Any
 import librosa
 import numpy as np
 
-from verbamind.ai.ser.config import FRAME_DURATION, FRAME_OVERLAP, INITIAL_DURATION
-from verbamind.ai.ser.features.loudness import compute_loudness
-from verbamind.ai.ser.features.pitch import compute_pitch
-from verbamind.ai.ser.pipeline.detector import NonverbalChangeDetector
+from verbamind.ai.speech_to_nonverbal.config import (
+    FRAME_DURATION,
+    FRAME_OVERLAP,
+    INITIAL_DURATION,
+)
+from verbamind.ai.speech_to_nonverbal.features.loudness import compute_loudness
+from verbamind.ai.speech_to_nonverbal.features.pitch import compute_pitch
+from verbamind.ai.speech_to_nonverbal.pipeline.detector import NonverbalChangeDetector
 
 logger = logging.getLogger(__name__)
 
 
-class SERService:
+class SpeechToNonverbalService:
     """Analyze audio for nonverbal cues (loudness + pitch changes per frame)."""
 
     def analyze_file(self, audio_path: str) -> list[dict[str, Any]]:
@@ -92,5 +96,5 @@ class SERService:
                 "pitch_category": str(p_row["Pitch_Category"]),
             })
 
-        logger.info(f"SER analysis complete: {len(results)} frames")
+        logger.info(f"SpeechToNonverbalInformation analysis complete: {len(results)} frames")
         return results
