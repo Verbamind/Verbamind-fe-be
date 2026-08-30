@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 URL_OLLAMA = "http://localhost:11434"
 # Model dapat dioverride via env VERBAMIND_LLM_MODEL tanpa mengubah kode.
-MODEL_LLM = os.environ.get("VERBAMIND_LLM_MODEL", "qwen2.5:3b-instruct")
+MODEL_LLM = os.environ.get("VERBAMIND_LLM_MODEL", "qwen2.5:7b-instruct")
 TEMPERATURE = 0.3
 
 

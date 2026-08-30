@@ -1,4 +1,4 @@
-# VerbaMind
+﻿# VerbaMind
 
 **Offline-first Windows desktop app** untuk dokumentasi sesi konseling berbantuan AI (format BIRP). Semua proses berjalan lokal (localhost) — tidak ada cloud, tidak ada telemetri.
 
@@ -13,7 +13,7 @@ VerbaMind merekam sesi konseling dual-channel (psikolog + pasien), mengenkripsi 
 | Database | SQLite (aiosqlite + SQLAlchemy) |
 | STT | OpenAI Whisper (`small`) |
 | Nonverbal | SpeechToNonverbalInformation (loudness + pitch, fuzzy inference) |
-| LLM | Qwen2.5 via Ollama (default `qwen2.5:3b-instruct`) |
+| LLM | Qwen2.5 via Ollama (default `qwen2.5:7b-instruct`) |
 | RAG | LangChain + FAISS + sentence-transformers |
 | Encryption | AES-256-GCM |
 | Packaging | Nuitka + Inno Setup |
@@ -57,7 +57,7 @@ pip install -e .
 
 ```powershell
 # LLM via Ollama
-ollama pull qwen2.5:3b-instruct
+ollama pull qwen2.5:7b-instruct
 
 # Model Whisper (diunduh sekali ke cache lokal)
 python scripts/download_whisper.py small
@@ -119,7 +119,7 @@ python -m verbamind.main
 | POST | `/api/v1/process` | **Pipeline penuh**: STT → nonverbal → merge → RAG + LLM → BIRP |
 | POST | `/api/v1/birp/generate` | Generate BIRP dari verbatim |
 
-Semua endpoint (kecuali yang dinyatakan) memerlukan header `X-VerbaMind-Token`.
+Semua endpoint memerlukan header `X-VerbaMind-Token`.
 
 ---
 
@@ -145,7 +145,7 @@ Rekam (.vera terenkripsi)
 
 ```powershell
 # Install dari https://ollama.com
-ollama pull qwen2.5:3b-instruct
+ollama pull qwen2.5:7b-instruct
 ollama serve
 ```
 

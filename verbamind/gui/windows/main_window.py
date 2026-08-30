@@ -376,7 +376,7 @@ class MainWindow(QMainWindow):
         lock_label.setStyleSheet("color: #2e7d32; font-weight: 600; font-size: 11px;")
         user_label = QLabel("Pengguna: Psikolog")
         user_label.setStyleSheet("color: #5a5a5a; font-size: 11px;")
-        model_label = QLabel("Model aktif: Qwen2.5 3B")
+        model_label = QLabel("Model aktif: Qwen2.5 7B")
         model_label.setStyleSheet("color: #5a5a5a; font-size: 11px;")
         version_label = QLabel("v0.1.0")
         version_label.setStyleSheet("color: #5a5a5a; font-size: 11px;")

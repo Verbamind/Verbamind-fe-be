@@ -151,7 +151,7 @@ class TestLLMWrapper:
 
         llm = LLMWrapper()
         assert llm._model == os.environ.get(
-            "VERBAMIND_LLM_MODEL", "qwen2.5:3b-instruct"
+            "VERBAMIND_LLM_MODEL", "qwen2.5:7b-instruct"
         )
         assert llm._base_url == "http://localhost:11434"
 
