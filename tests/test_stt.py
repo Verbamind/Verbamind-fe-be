@@ -47,7 +47,7 @@ class TestTranscribeService:
         from verbamind.backend.ai_pipeline.transcribe_service import TranscribeService
 
         svc = TranscribeService(model_path="nonexistent-model", mock=False)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             svc.transcribe(b"RIFF\xf0\x3f\x00\x00WAVEfmt ")
 
 

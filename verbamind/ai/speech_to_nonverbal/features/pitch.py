@@ -1,33 +1,13 @@
-import librosa
 import numpy as np
 from scipy.signal import find_peaks
 
 from verbamind.ai.speech_to_nonverbal.config import (
-    FRAME_DURATION,
-    FRAME_OVERLAP,
     PITCH_CORRELATION_THRESHOLD,
     PITCH_MAX,
     PITCH_MIN,
     PITCH_PROMINENCE,
 )
-
-
-def frame_audio(audio, sr):
-    """
-    Split audio into overlapping frames.
-    """
-
-    frame_length = int(FRAME_DURATION * sr)
-
-    hop_length = int(frame_length * (1 - FRAME_OVERLAP))
-
-    frames = librosa.util.frame(
-        audio,
-        frame_length=frame_length,
-        hop_length=hop_length
-    )
-
-    return frames.T
+from verbamind.ai.speech_to_nonverbal.features.framing import frame_audio
 
 
 def compute_autocorrelation(frame):

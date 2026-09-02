@@ -179,7 +179,7 @@ class TestLLMWrapper:
 
 class TestRAGRetriever:
     @patch("verbamind.backend.ai_pipeline.rag.retriever.FAISS")
-    @patch("verbamind.backend.ai_pipeline.rag.retriever.HuggingFaceEmbeddings")
+    @patch("verbamind.backend.ai_pipeline.rag.retriever.OllamaEmbeddings")
     def test_retrieve_returns_context(self, mock_emb, mock_faiss):
         from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
 
@@ -197,7 +197,7 @@ class TestRAGRetriever:
             assert "kode_etik.txt" in result
 
     @patch("verbamind.backend.ai_pipeline.rag.retriever.FAISS")
-    @patch("verbamind.backend.ai_pipeline.rag.retriever.HuggingFaceEmbeddings")
+    @patch("verbamind.backend.ai_pipeline.rag.retriever.OllamaEmbeddings")
     def test_retrieve_empty_results(self, mock_emb, mock_faiss):
         from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
 
@@ -277,7 +277,7 @@ class TestKnowledgeIngest:
             TUMPANG_TINDIH_CHUNK,
         )
 
-        assert "MiniLM" in NAMA_MODEL_EMBEDDING
+        assert NAMA_MODEL_EMBEDDING == "nomic-embed-text"
         assert UKURAN_CHUNK == 500
         assert TUMPANG_TINDIH_CHUNK == 100
 

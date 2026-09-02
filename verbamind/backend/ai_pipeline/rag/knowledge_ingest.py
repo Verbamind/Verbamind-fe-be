@@ -2,7 +2,7 @@
 # knowledge_ingest.py — adapted from Verbamind_RAG src/ingest_knowledge.py
 #
 # Build FAISS vector index from clinical knowledge base (.txt + .pdf).
-# Uses paraphrase-multilingual-MiniLM-L12-v2 (optimized for Bahasa Indonesia).
+# Uses Ollama embeddings (nomic-embed-text) — no PyTorch dependency.
 # ==============================================================================
 
 import sys
@@ -12,7 +12,7 @@ DIREKTORI_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
 DIREKTORI_KNOWLEDGE_BASE = DIREKTORI_ROOT / "data" / "knowledge_base"
 DIREKTORI_FAISS_INDEX = DIREKTORI_ROOT / "faiss_index"
 
-NAMA_MODEL_EMBEDDING = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+NAMA_MODEL_EMBEDDING = "nomic-embed-text"
 UKURAN_CHUNK = 500
 TUMPANG_TINDIH_CHUNK = 100
 
@@ -78,16 +78,30 @@ def pecah_chunk(dokumen: list) -> list:
 
 def bangun_faiss(chunk: list) -> None:
     from langchain_community.vectorstores import FAISS
-    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_ollama import OllamaEmbeddings
 
     print(f"[INFO] Memuat model: {NAMA_MODEL_EMBEDDING}...")
-    emb = HuggingFaceEmbeddings(
-        model_name=NAMA_MODEL_EMBEDDING,
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
+    emb = OllamaEmbeddings(
+        model=NAMA_MODEL_EMBEDDING,
+        base_url="http://localhost:11434",
     )
+
+    texts = [c.page_content for c in chunk]
+    metadatas = [c.metadata for c in chunk]
+
+    # Embed in batches — a single huge /api/embed call overwhelms the local
+    # Ollama tokenizer service.
+    batch_size = 128
+    all_embeddings: list[list[float]] = []
+    total = len(texts)
+    for i in range(0, total, batch_size):
+        batch = texts[i : i + batch_size]
+        all_embeddings.extend(emb.embed_documents(batch))
+        print(f"[INFO] embedded {min(i + batch_size, total)}/{total}")
+
     print("[INFO] Membangun index FAISS...")
-    index = FAISS.from_documents(chunk, emb)
+    text_embeddings = list(zip(texts, all_embeddings))
+    index = FAISS.from_embeddings(text_embeddings, emb, metadatas=metadatas)
     DIREKTORI_FAISS_INDEX.mkdir(parents=True, exist_ok=True)
     index.save_local(str(DIREKTORI_FAISS_INDEX))
     print(f"[SUKSES] FAISS index tersimpan di: {DIREKTORI_FAISS_INDEX}")

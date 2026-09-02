@@ -4,10 +4,10 @@ Loads audio file → extracts loudness + pitch features → runs adaptive baseli
 fuzzy inference → returns per-frame nonverbal results ready for DB persistence.
 """
 
+import io
 import logging
 from typing import Any
 
-import librosa
 import numpy as np
 
 from verbamind.ai.speech_to_nonverbal.config import (
@@ -20,6 +20,22 @@ from verbamind.ai.speech_to_nonverbal.features.pitch import compute_pitch
 from verbamind.ai.speech_to_nonverbal.pipeline.detector import NonverbalChangeDetector
 
 logger = logging.getLogger(__name__)
+
+
+def _load_wav(source) -> tuple[np.ndarray, int]:
+    """Load a WAV (path or bytes) -> (float32 audio in [-1, 1], sample_rate)."""
+    from scipy.io import wavfile
+
+    sr, data = wavfile.read(source)
+    if data.dtype == np.int16:
+        data = data.astype(np.float32) / 32768.0
+    elif data.dtype == np.int32:
+        data = data.astype(np.float32) / 2147483648.0
+    else:
+        data = data.astype(np.float32)
+    if data.ndim == 2:
+        data = data.mean(axis=1)  # stereo -> mono
+    return data, sr
 
 
 class SpeechToNonverbalService:
@@ -36,7 +52,7 @@ class SpeechToNonverbalService:
             baseline_loudness, delta_loudness, loudness_category,
             current_pitch, baseline_pitch, delta_pitch, pitch_category.
         """
-        audio, sr = librosa.load(audio_path, sr=None)
+        audio, sr = _load_wav(audio_path)
         return self._run_pipeline(audio, sr)
 
     def analyze_bytes(self, audio_bytes: bytes, sr: int = 22050) -> list[dict[str, Any]]:
@@ -49,8 +65,7 @@ class SpeechToNonverbalService:
         Returns:
             Same as analyze_file().
         """
-        import io
-        audio, sr = librosa.load(io.BytesIO(audio_bytes), sr=None)
+        audio, sr = _load_wav(io.BytesIO(audio_bytes))
         return self._run_pipeline(audio, sr)
 
     def _run_pipeline(self, audio: np.ndarray, sr: int) -> list[dict[str, Any]]:

@@ -11,10 +11,10 @@ VerbaMind merekam sesi konseling dual-channel (psikolog + pasien), mengenkripsi 
 | GUI | PySide6 (Windows classic aesthetic, Segoe UI) |
 | Backend | FastAPI (127.0.0.1 only) |
 | Database | SQLite (aiosqlite + SQLAlchemy) |
-| STT | OpenAI Whisper (`small`) |
+| STT | faster-whisper (CTranslate2) — model `small` |
 | Nonverbal | SpeechToNonverbalInformation (loudness + pitch, fuzzy inference) |
 | LLM | Qwen2.5 via Ollama (default `qwen2.5:7b-instruct`) |
-| RAG | LangChain + FAISS + sentence-transformers |
+| RAG | LangChain + FAISS + Ollama embeddings (`nomic-embed-text`) |
 | Encryption | AES-256-GCM |
 | Packaging | Nuitka + Inno Setup |
 
@@ -56,8 +56,9 @@ pip install -e .
 ### 3. Siapkan model
 
 ```powershell
-# LLM via Ollama
+# LLM + embedding via Ollama
 ollama pull qwen2.5:7b-instruct
+ollama pull nomic-embed-text
 
 # Model Whisper (diunduh sekali ke cache lokal)
 python scripts/download_whisper.py small
@@ -162,7 +163,7 @@ mkdir data\knowledge_base
 python -m verbamind.backend.ai_pipeline.rag.knowledge_ingest
 ```
 
-> Model embedding (`paraphrase-multilingual-MiniLM-L12-v2`) diunduh otomatis sekali saja ke cache lokal (~470MB), lalu sepenuhnya offline. Folder `data/` dan `faiss_index/` di-ignore oleh git.
+> Model embedding `nomic-embed-text` dijalankan via Ollama (harus sudah `ollama pull nomic-embed-text`). Folder `data/` dan `faiss_index/` di-ignore oleh git.
 
 ---
 

@@ -1,7 +1,8 @@
-"""Whisper STT transcription service — wraps Whisper model, outputs timestamped segments.
+"""Whisper STT transcription service — wraps faster-whisper (CTranslate2).
 
-Uses lazy import so tests run without Whisper/torch installed.
-Model "small" is cached locally after first download (offline afterwards).
+Uses lazy import so tests run without the model installed.
+Model "small" is downloaded once to the local cache (offline afterwards).
+faster-whisper runs on CTranslate2 (no PyTorch), keeping the backend small.
 """
 
 import logging
@@ -16,13 +17,15 @@ _whisper_model = None
 
 
 def _get_whisper_model(model_name: str = "small"):
-    """Load (and cache) the Whisper model once per process."""
+    """Load (and cache) the faster-whisper model once per process."""
     global _whisper_model
     if _whisper_model is None:
-        import whisper
+        from faster_whisper import WhisperModel
 
         logger.info("Memuat model Whisper '%s'...", model_name)
-        _whisper_model = whisper.load_model(model_name)
+        _whisper_model = WhisperModel(
+            model_name, device="cpu", compute_type="int8"
+        )
     return _whisper_model
 
 
@@ -58,19 +61,19 @@ class TranscribeService:
         tmp_path = Path(name)
         try:
             tmp_path.write_bytes(audio_data)
-            result = model.transcribe(
+            gen, _info = model.transcribe(
                 str(tmp_path),
                 language=self._language,
                 word_timestamps=False,
             )
-            for seg in result.get("segments", []):
-                text = seg.get("text", "").strip()
+            for seg in gen:
+                text = seg.text.strip()
                 if not text:
                     continue
                 segments.append({
                     "text": text,
-                    "start": float(seg.get("start", 0.0)),
-                    "end": float(seg.get("end", 0.0)),
+                    "start": float(seg.start),
+                    "end": float(seg.end),
                     "channel": 0,
                 })
         finally:

@@ -47,3 +47,8 @@ models/whisper/*.pt
 
 # Screenshots (dev verification)
 screenshots/
+
+# Build artifacts
+nuitka-crash-report.xml
+installer/VC_redist.x64.exe
+installer/*.exe

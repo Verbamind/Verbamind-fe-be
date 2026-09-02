@@ -1,19 +1,21 @@
 """RAG Retriever — FAISS semantic search over clinical knowledge base.
 
-Adapted from Verbamind_RAG src/main_rag.py — muat_index_faiss + ambil_konteks_relevan.
+Uses Ollama embeddings (nomic-embed-text) so the backend does not pull
+PyTorch/sentence-transformers. FAISS index is built by knowledge_ingest.
 """
 
 from pathlib import Path
 
 try:
     from langchain_community.vectorstores import FAISS
-    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_ollama import OllamaEmbeddings
 except ImportError:
-    HuggingFaceEmbeddings = None  # type: ignore
+    OllamaEmbeddings = None  # type: ignore
     FAISS = None  # type: ignore
 
-NAMA_MODEL_EMBEDDING = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+NAMA_MODEL_EMBEDDING = "nomic-embed-text"
 JUMLAH_DOKUMEN_RETRIEVAL = 4
+OLLAMA_URL = "http://localhost:11434"
 
 
 class RAGRetriever:
@@ -23,12 +25,11 @@ class RAGRetriever:
         self._embeddings = None
 
     def _init_embeddings(self):
-        if HuggingFaceEmbeddings is None:
-            raise ImportError("langchain-huggingface not installed")
-        self._embeddings = HuggingFaceEmbeddings(
-            model_name=NAMA_MODEL_EMBEDDING,
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True},
+        if OllamaEmbeddings is None:
+            raise ImportError("langchain-ollama not installed")
+        self._embeddings = OllamaEmbeddings(
+            model=NAMA_MODEL_EMBEDDING,
+            base_url=OLLAMA_URL,
         )
 
     def load_index(self):
