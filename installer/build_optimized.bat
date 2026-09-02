@@ -36,7 +36,6 @@ echo.
 python -m nuitka ^
     --standalone ^
     --windows-console-mode=disable ^
-    --lto=yes ^
     --jobs=%BUILD_JOBS% ^
     --enable-plugin=anti-bloat ^
     --enable-plugin=pyside6 ^
@@ -63,11 +62,11 @@ echo.
 python -m nuitka ^
     --standalone ^
     --windows-console-mode=force ^
-    --lto=yes ^
-    --jobs=%BUILD_JOBS% ^
+    --jobs=4 ^
     --enable-plugin=anti-bloat ^
     --noinclude-pytest-mode=nofollow ^
     --noinclude-setuptools-mode=nofollow ^
+    --noinclude-numba-mode=nofollow ^
     --nofollow-import-to=%EXCLUDE_MODULES% ^
     --python-flag=no_docstrings ^
     --output-dir=dist ^
