@@ -6,6 +6,8 @@ PyTorch/sentence-transformers. FAISS index is built by knowledge_ingest.
 
 from pathlib import Path
 
+from verbamind.config.paths import app_install_dir
+
 try:
     from langchain_community.vectorstores import FAISS
     from langchain_ollama import OllamaEmbeddings
@@ -18,9 +20,14 @@ JUMLAH_DOKUMEN_RETRIEVAL = 4
 OLLAMA_URL = "http://localhost:11434"
 
 
+def default_index_dir() -> Path:
+    """Bundled FAISS index directory ({app}/faiss_index or repo root/faiss_index)."""
+    return app_install_dir() / "faiss_index"
+
+
 class RAGRetriever:
-    def __init__(self, index_dir: str):
-        self._index_dir = Path(index_dir)
+    def __init__(self, index_dir: str | None = None):
+        self._index_dir = Path(index_dir) if index_dir else default_index_dir()
         self._index: FAISS | None = None
         self._embeddings = None
 

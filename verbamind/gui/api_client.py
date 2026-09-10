@@ -99,6 +99,22 @@ class VerbaMindClient:
     def dashboard_stats(self) -> dict:
         return self._request("GET", "/api/v1/dashboard/stats")
 
+    # ---- settings & models ----
+    def list_models(self) -> dict:
+        return self._request("GET", "/api/v1/models")
+
+    def get_llm_settings(self) -> dict:
+        return self._request("GET", "/api/v1/settings/llm")
+
+    def update_llm_settings(
+        self, llm_model: str, ollama_base_url: str | None = None
+    ) -> dict:
+        return self._request(
+            "PUT",
+            "/api/v1/settings/llm",
+            {"llm_model": llm_model, "ollama_base_url": ollama_base_url},
+        )
+
     # ---- full AI process ----
     def process_session(
         self,

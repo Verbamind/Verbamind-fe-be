@@ -14,6 +14,7 @@ from verbamind.backend.api.patients_router import router as patients_router
 from verbamind.backend.api.process_router import router as process_router
 from verbamind.backend.api.router import router
 from verbamind.backend.api.sessions_router import router as sessions_router
+from verbamind.backend.api.settings_router import router as settings_router
 from verbamind.backend.api.speech_to_nonverbal_router import (
     router as speech_to_nonverbal_router,
 )
@@ -103,6 +104,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(audit_router)
     app.include_router(process_router)
+    app.include_router(settings_router)
     app.include_router(speech_to_nonverbal_router)
     app.include_router(transcribe_router)
     return app

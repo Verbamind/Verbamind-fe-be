@@ -366,13 +366,21 @@ class MainWindow(QMainWindow):
             f"Rekaman tersimpan (terenkripsi): {filepath} — {seconds}s", 8000
         )
 
+    def _active_model_name(self) -> str:
+        try:
+            from verbamind.config.llm_settings import resolve_llm_model
+
+            return resolve_llm_model()
+        except Exception:
+            return "Ollama"
+
     def _setup_statusbar(self):
         sb = QStatusBar()
         lock_label = QLabel("🔒 Data tersimpan")
         lock_label.setStyleSheet("color: #2e7d32; font-weight: 600; font-size: 11px;")
         user_label = QLabel("Pengguna: Psikolog")
         user_label.setStyleSheet("color: #5a5a5a; font-size: 11px;")
-        model_label = QLabel("Model aktif: Qwen2.5 7B")
+        model_label = QLabel(f"Model aktif: {self._active_model_name()}")
         model_label.setStyleSheet("color: #5a5a5a; font-size: 11px;")
         version_label = QLabel("v0.1.0")
         version_label.setStyleSheet("color: #5a5a5a; font-size: 11px;")

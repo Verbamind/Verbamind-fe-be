@@ -1,23 +1,34 @@
-"""LLM Wrapper — Ollama integration for Qwen2.5:7B-Instruct.
+"""LLM Wrapper — Ollama integration for any locally installed model.
 
-Adapted from Verbamind_RAG src/main_rag.py: inisialisasi_llm_ollama.
+The model name and base URL are resolved at runtime via
+verbamind.config.llm_settings (env var > settings.json > default), so the
+user can switch models (3b, 7b, llama, mistral, ...) without a code change.
 """
 
 import logging
-import os
+
+from verbamind.config.llm_settings import (
+    get_llm_base_url,
+    resolve_llm_model,
+)
 
 logger = logging.getLogger(__name__)
 
-URL_OLLAMA = "http://localhost:11434"
-# Model dapat dioverride via env VERBAMIND_LLM_MODEL tanpa mengubah kode.
-MODEL_LLM = os.environ.get("VERBAMIND_LLM_MODEL", "qwen2.5:7b-instruct")
 TEMPERATURE = 0.3
+
+# Backwards-compatible module-level constants (resolved once at import).
+MODEL_LLM = resolve_llm_model()
+URL_OLLAMA = get_llm_base_url()
 
 
 class LLMWrapper:
-    def __init__(self, base_url: str = URL_OLLAMA, model: str = MODEL_LLM):
-        self._base_url = base_url
-        self._model = model
+    def __init__(
+        self,
+        base_url: str | None = None,
+        model: str | None = None,
+    ):
+        self._base_url = base_url or get_llm_base_url()
+        self._model = model or resolve_llm_model()
         self._llm = None
 
     def _init(self):

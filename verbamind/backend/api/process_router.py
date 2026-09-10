@@ -46,7 +46,7 @@ def _build_process_service(language: str):
     )
     from verbamind.backend.ai_pipeline.transcribe_service import TranscribeService
 
-    retriever = RAGRetriever(index_dir="faiss_index")
+    retriever = RAGRetriever()
     llm = LLMWrapper()
     return ProcessService(
         transcribe_service=TranscribeService(mock=False, language=language),

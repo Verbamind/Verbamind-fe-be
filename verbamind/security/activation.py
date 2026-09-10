@@ -4,10 +4,11 @@ import hashlib
 import hmac
 import platform
 import uuid
-from pathlib import Path
 
-_ACTIVATION_FILE = Path(__file__).resolve().parent.parent.parent / "config" / ".activated"
-_LICENSE_FILE = Path(__file__).resolve().parent.parent.parent / "config" / ".license"
+from verbamind.config.paths import app_data_dir
+
+_ACTIVATION_FILE = app_data_dir() / ".activated"
+_LICENSE_FILE = app_data_dir() / ".license"
 
 
 def get_hardware_id() -> str:

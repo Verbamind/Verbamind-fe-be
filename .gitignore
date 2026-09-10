@@ -44,6 +44,7 @@ data/
 faiss_index/
 output_hasil/
 models/whisper/*.pt
+models/whisper-small/
 
 # Screenshots (dev verification)
 screenshots/
@@ -52,3 +53,8 @@ screenshots/
 nuitka-crash-report.xml
 installer/VC_redist.x64.exe
 installer/*.exe
+installer/output/
+
+# Debug / local artifacts
+DEBUG_HANDOFF.md
+build_log.txt

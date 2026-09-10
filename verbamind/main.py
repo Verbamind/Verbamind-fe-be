@@ -31,24 +31,29 @@ def _backend_running(port: int) -> bool:
 
 
 def _spawn_backend(port: int) -> None:
-    if getattr(sys, "frozen", False):
-        base = Path(sys.executable).parent
-        exe = base / "backend" / "backend.exe"
-        if not exe.exists():
-            exe = base / "backend.exe"
+    base = Path(sys.executable).resolve().parent
+    # Look for the backend executable in the packaged layouts, then fall back
+    # to running the backend module directly (dev mode).
+    candidates = (
+        base / "backend" / "backend.exe",
+        base / "backend.exe",
+        base.parent / "backend.dist" / "backend.exe",
+    )
+    for exe in candidates:
         if exe.exists():
             subprocess.Popen(
                 [str(exe)],
-                cwd=str(base),
+                cwd=str(exe.parent),
                 creationflags=_CREATE_NO_WINDOW,
             )
-    else:
-        root = Path(__file__).resolve().parent.parent
-        subprocess.Popen(
-            [sys.executable, "-m", "verbamind.backend.main"],
-            cwd=str(root),
-            creationflags=_CREATE_NO_WINDOW,
-        )
+            return
+
+    root = Path(__file__).resolve().parent.parent
+    subprocess.Popen(
+        [sys.executable, "-m", "verbamind.backend.main"],
+        cwd=str(root),
+        creationflags=_CREATE_NO_WINDOW,
+    )
 
 
 def main():

@@ -67,7 +67,7 @@ async def generate_birp(payload: GenerateBIRPRequest) -> dict:
         from verbamind.backend.ai_pipeline.llm import LLMWrapper
         from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
 
-        retriever = RAGRetriever(index_dir="faiss_index")
+        retriever = RAGRetriever()
         llm = LLMWrapper()
         generator = BIRPGenerator(retriever=retriever, llm=llm)
         birp = generator.generate(

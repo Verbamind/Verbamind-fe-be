@@ -145,15 +145,12 @@ class TestBIRPPrompt:
 
 class TestLLMWrapper:
     def test_llm_default_config(self):
-        import os
-
         from verbamind.backend.ai_pipeline.llm import LLMWrapper
+        from verbamind.config.llm_settings import get_llm_base_url, resolve_llm_model
 
         llm = LLMWrapper()
-        assert llm._model == os.environ.get(
-            "VERBAMIND_LLM_MODEL", "qwen2.5:7b-instruct"
-        )
-        assert llm._base_url == "http://localhost:11434"
+        assert llm._model == resolve_llm_model()
+        assert llm._base_url == get_llm_base_url()
 
     def test_llm_custom_config(self):
         from verbamind.backend.ai_pipeline.llm import LLMWrapper

@@ -21,7 +21,7 @@ AppSupportURL={#MyAppURL}
 DefaultDirName={localappdata}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-OutputDir=installer\output
+OutputDir=output
 OutputBaseFilename=VerbaMind-Setup-{#MyAppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -29,25 +29,27 @@ WizardStyle=modern
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
-DiskSpanning=yes
-DiskSliceSize=2000000000
-SetupIconFile=installer\verbamind.ico
+DiskSpanning=no
+SetupIconFile=verbamind.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "indonesian"; MessagesFile: "compiler:Languages\Indonesian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
 ; GUI application
-Source: "dist\VerbaMind.dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\VerbaMind.dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Backend service
-Source: "dist\backend.dist\*"; DestDir: "{app}\backend"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\backend.dist\*"; DestDir: "{app}\backend"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Whisper STT model (local, offline)
+Source: "..\models\whisper-small\*"; DestDir: "{app}\models\whisper-small"; Flags: ignoreversion recursesubdirs createallsubdirs
+; FAISS RAG index (local, offline)
+Source: "..\faiss_index\*"; DestDir: "{app}\faiss_index"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; VC++ Redistributable (bundled)
-Source: "installer\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

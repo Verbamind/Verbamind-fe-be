@@ -13,7 +13,10 @@ APP_DIR_NAME = "VerbaMind"
 
 
 def is_frozen() -> bool:
-    return getattr(sys, "frozen", False)
+    """True when packaged (PyInstaller sets sys.frozen; Nuitka sets __compiled__)."""
+    return getattr(sys, "frozen", False) or hasattr(
+        sys.modules.get("__main__"), "__compiled__"
+    )
 
 
 def app_data_dir() -> Path:
@@ -25,6 +28,17 @@ def app_data_dir() -> Path:
     d = Path(base) / APP_DIR_NAME
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+def app_install_dir() -> Path:
+    """Read-only install directory holding bundled resources.
+
+    Frozen (backend): {app} (parent of the backend/ dir). Dev: repo root.
+    Used to locate bundled models and the FAISS index.
+    """
+    if is_frozen():
+        return Path(sys.executable).resolve().parent.parent
+    return Path(__file__).resolve().parents[2]
 
 
 def token_file() -> Path:

@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from verbamind.backend.ai_pipeline.llm import MODEL_LLM, LLMWrapper
+from verbamind.backend.ai_pipeline.llm import LLMWrapper
 from verbamind.backend.ai_pipeline.prompts.birp_prompt import (
     BIRP_REQUIRED_KEYS,
     SYSTEM_PROMPT,
@@ -20,6 +20,9 @@ from verbamind.backend.ai_pipeline.rag.retriever import RAGRetriever
 from verbamind.backend.ai_pipeline.rag.verbatim_parser import (
     gabungkan_transkrip_menjadi_narasi,
 )
+from verbamind.config.llm_settings import resolve_llm_model
+from verbamind.config.paths import app_data_dir
+from verbamind.security.filename_sanitizer import sanitize_filename_part
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +32,13 @@ class BIRPGenerator:
         self,
         retriever: RAGRetriever,
         llm: LLMWrapper,
-        output_dir: str = "output_hasil",
+        output_dir: str | None = None,
     ):
         self._retriever = retriever
         self._llm = llm
-        self._output_dir = Path(output_dir)
+        self._output_dir = (
+            Path(output_dir) if output_dir else app_data_dir() / "output_hasil"
+        )
 
     def generate(
         self,
@@ -82,12 +87,13 @@ class BIRPGenerator:
     def _save(self, session_id: str, birp: dict) -> Path:
         self._output_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        name = f"BIRP_{session_id}_{ts}.json"
+        safe_sid = sanitize_filename_part(session_id)
+        name = f"BIRP_{safe_sid}_{ts}.json"
         path = self._output_dir / name
         output = {
             "id_sesi": session_id,
             "waktu_analisis": datetime.now().isoformat(),
-            "model_llm": MODEL_LLM,
+            "model_llm": resolve_llm_model(),
             "catatan_klinis_birp": birp,
         }
         path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
