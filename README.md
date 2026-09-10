@@ -20,7 +20,23 @@ VerbaMind merekam sesi konseling dual-channel (psikolog + pasien), mengenkripsi 
 
 ---
 
-## Prerequisites
+## Installation (Windows installer — recommended)
+
+1. Download the installer and run it:
+
+   [**Download VerbaMind-Setup-0.1.0.exe**](https://github.com/Verbamind/Verbamind-fe-be/releases/download/v0.1.0/VerbaMind-Setup-0.1.0.exe)
+
+2. Install [Ollama](https://ollama.com/download/windows), then pull the models BIRP needs:
+
+   ```powershell
+   ollama pull qwen2.5:3b-instruct
+   ollama pull nomic-embed-text
+   ```
+
+3. Launch **VerbaMind** from the Start menu or desktop shortcut. The installer
+   bundles the GUI, backend, Whisper model, and FAISS index — all offline.
+
+## Prerequisites (development)
 
 - **Windows 10/11** (x64)
 - **Python 3.10+**
